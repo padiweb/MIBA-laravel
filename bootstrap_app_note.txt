@@ -1,0 +1,6 @@
+Tambahkan di bootstrap/app.php bagian middleware aliases:
+->withMiddleware(function (Middleware $middleware) {
+    $middleware->alias([
+        'auth.miba' => \App\Http\Middleware\AuthMiddleware::class,
+    ]);
+})
