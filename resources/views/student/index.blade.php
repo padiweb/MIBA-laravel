@@ -4,6 +4,9 @@
   <div class="box-header with-border">
     <h3 class="box-title">Daftar Siswa</h3>
     <div class="box-tools pull-right">
+      <a href="{{ route('student.importForm') }}" class="btn btn-success btn-sm">
+        <i class="fa fa-upload"></i> Import Data
+      </a>
       <a href="{{ route('student.create') }}" class="btn btn-primary btn-sm">
         <i class="fa fa-plus"></i> Tambah Siswa
       </a>
@@ -34,9 +37,15 @@
       <a href="{{ route('student.index') }}" class="btn btn-default">Reset</a>
     </form>
 
+    <form action="{{ route('student.printCards') }}" method="POST" target="_blank">
+      @csrf
+      <div style="margin-bottom:8px">
+        <button type="submit" class="btn btn-default btn-sm"><i class="fa fa-print"></i> Cetak Kartu Terpilih</button>
+      </div>
     <table class="table table-bordered table-striped table-hover">
       <thead>
         <tr>
+          <th><input type="checkbox" id="selectall"></th>
           <th>No</th><th>NIS</th><th>Nama Lengkap</th>
           <th>Kelas</th><th>Unit Pendidikan</th><th>Status</th><th>Aksi</th>
         </tr>
@@ -44,6 +53,7 @@
       <tbody>
         @forelse($students as $i => $s)
         <tr>
+          <td><input type="checkbox" class="checkbox" name="msg[]" value="{{ $s->student_id }}"></td>
           <td>{{ $students->firstItem() + $i }}</td>
           <td>{{ $s->student_nis }}</td>
           <td>{{ $s->student_full_name }}</td>
@@ -61,6 +71,12 @@
             <a href="{{ route('student.edit', $s->student_id) }}" class="btn btn-warning btn-xs">
               <i class="fa fa-edit"></i>
             </a>
+            <a href="{{ route('student.resetPasswordForm', $s->student_id) }}" class="btn btn-primary btn-xs" title="Reset Password">
+              <i class="fa fa-key"></i>
+            </a>
+            <a href="{{ route('student.printPdf', $s->student_id) }}" target="_blank" class="btn btn-default btn-xs" title="Cetak Kartu">
+              <i class="fa fa-id-card"></i>
+            </a>
             <form action="{{ route('student.destroy', $s->student_id) }}" method="POST" style="display:inline"
                   onsubmit="return confirm('Hapus siswa {{ $s->student_full_name }}?')">
               @csrf @method('DELETE')
@@ -69,11 +85,19 @@
           </td>
         </tr>
         @empty
-        <tr><td colspan="7" class="text-center">Tidak ada data</td></tr>
+        <tr><td colspan="8" class="text-center">Tidak ada data</td></tr>
         @endforelse
       </tbody>
     </table>
+    </form>
     <div class="text-center">{{ $students->links() }}</div>
   </div>
 </div>
 @endsection
+@push('scripts')
+<script>
+document.getElementById('selectall')?.addEventListener('change', function() {
+  document.querySelectorAll('.checkbox').forEach(cb => cb.checked = this.checked);
+});
+</script>
+@endpush

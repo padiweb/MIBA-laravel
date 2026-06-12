@@ -28,9 +28,15 @@
           <td>{{ $u->user_email }}</td>
           <td><span class="label label-info">{{ $u->role->role_name ?? '-' }}</span></td>
           <td>
+            <a href="{{ route('users.show', $u->user_id) }}" class="btn btn-info btn-xs" title="Detail">
+              <i class="fa fa-eye"></i>
+            </a>
             <button class="btn btn-warning btn-xs" onclick="editUser({{ $u->user_id }}, '{{ $u->user_full_name }}', '{{ $u->user_email }}', {{ $u->user_role_role_id }})">
               <i class="fa fa-edit"></i>
             </button>
+            <a href="{{ route('users.resetPasswordForm', $u->user_id) }}" class="btn btn-primary btn-xs" title="Reset Password">
+              <i class="fa fa-key"></i>
+            </a>
             <form action="{{ route('users.destroy', $u->user_id) }}" method="POST" style="display:inline"
                   onsubmit="return confirm('Hapus pengguna ini?')">
               @csrf @method('DELETE')

@@ -297,6 +297,22 @@ class PaymentController extends Controller {
         return $this->render('payment.edit_bebas', compact('payment','student','bebas'));
     }
 
+    // Hapus tarif bebas (hanya jika belum ada pembayaran/angsuran)
+    public function deletePaymentBebas($payment_id, $student_id, $bebas_id) {
+        $this->requireSuperuser();
+        $bebas = Bebas::findOrFail($bebas_id);
+
+        if ($bebas->bebas_total_pay > 0 || \App\Models\BebasPay::where('bebas_bebas_id', $bebas_id)->exists()) {
+            return redirect()->route('payment.viewBebas', $payment_id)
+                ->with('failed', 'Pembayaran Siswa tidak dapat dihapus');
+        }
+
+        $bebas->delete();
+
+        $this->writeLog('DELETE', 'payment', 'Hapus tarif bebas siswa ID ' . $student_id);
+        return redirect()->route('payment.viewBebas', $payment_id)->with('success', 'Hapus Pembayaran Siswa berhasil');
+    }
+
     public function updateBebas(Request $request, $payment_id, $student_id, $bebas_id) {
         $this->requireSuperuser();
         $request->validate(['bebas_bill' => 'required|numeric']);

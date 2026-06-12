@@ -53,6 +53,34 @@ class UsersController extends Controller {
         return redirect()->route('users.index')->with('success', 'Pengguna dihapus');
     }
 
+    // Detail pengguna
+    public function show($id) {
+        $user = User::with('role')->findOrFail($id);
+        return $this->render('users.view', compact('user'));
+    }
+
+    // Reset Password Pengguna
+    public function resetPasswordForm($id) {
+        $user = User::findOrFail($id);
+        return $this->render('users.reset_password', compact('user'));
+    }
+
+    public function resetPassword(Request $request, $id) {
+        $request->validate([
+            'user_password' => 'required|min:6',
+            'passconf'      => 'required|same:user_password',
+        ], [
+            'passconf.same' => 'Password dan konfirmasi password tidak cocok',
+        ]);
+
+        $user = User::findOrFail($id);
+        $user->update(['user_password' => Hash::make($request->user_password)]);
+
+        $this->writeLog('UPDATE', 'users', 'Reset password pengguna: ' . $user->user_full_name);
+
+        return redirect()->route('users.index')->with('success', 'Reset Password Berhasil');
+    }
+
     // Role management
     public function roles() {
         $roles = UserRole::all();

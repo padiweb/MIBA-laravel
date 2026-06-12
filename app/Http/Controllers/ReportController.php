@@ -51,6 +51,86 @@ class ReportController extends Controller {
         ));
     }
 
+    // Export Laporan Total Keuangan ke CSV (pengganti PHPExcel report())
+    public function exportKeuangan(Request $request) {
+        $ds = $request->ds;
+        $de = $request->de;
+
+        $bulanQuery = Bulan::with(['student.class', 'payment.pos', 'payment.period', 'month'])
+            ->where('bulan_status', 1);
+        $bebasQuery = \App\Models\BebasPay::with(['bebas.student.class', 'bebas.payment.pos', 'bebas.payment.period']);
+        $debitQuery = Debit::query();
+        $kreditQuery = Kredit::query();
+
+        if ($ds && $de) {
+            $bulanQuery->whereBetween('bulan_date_pay', [$ds, $de]);
+            $bebasQuery->whereBetween('bebas_pay_input_date', [$ds, $de]);
+            $debitQuery->whereBetween('debit_date', [$ds, $de]);
+            $kreditQuery->whereBetween('kredit_date', [$ds, $de]);
+        }
+
+        $bulans = $bulanQuery->get();
+        $bebasPays = $bebasQuery->get();
+        $debits = $debitQuery->get();
+        $kredits = $kreditQuery->get();
+        $schoolName = Setting::getValue(1);
+
+        $filename = 'LAPORAN_KEUANGAN_' . date('dmY') . '.csv';
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"$filename\"",
+        ];
+
+        $callback = function() use ($bulans, $bebasPays, $debits, $kredits, $schoolName, $ds, $de) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, ['LAPORAN KEUANGAN']);
+            fputcsv($file, [$schoolName]);
+            if ($ds && $de) {
+                fputcsv($file, ['Tanggal Laporan: ' . \Carbon\Carbon::parse($ds)->locale('id')->isoFormat('D MMMM Y') . ' s/d ' . \Carbon\Carbon::parse($de)->locale('id')->isoFormat('D MMMM Y')]);
+            }
+            fputcsv($file, ['Tanggal Unduh: ' . \Carbon\Carbon::now()->locale('id')->isoFormat('D MMMM Y, HH:mm'), 'Pengunduh: ' . session('user_fullname')]);
+            fputcsv($file, []);
+            fputcsv($file, ['NO','PEMBAYARAN','NAMA SISWA','KELAS','TANGGAL','PENERIMAAN','PENGELUARAN','KETERANGAN']);
+
+            $no = 1;
+            foreach ($bulans as $b) {
+                fputcsv($file, [
+                    $no++,
+                    ($b->payment->pos->pos_name ?? '') . ' - T.P ' . ($b->payment->period->period_start ?? '') . '/' . ($b->payment->period->period_end ?? '') . ' - (' . ($b->month->month_name ?? '') . ')',
+                    $b->student->student_full_name ?? '',
+                    $b->student->class->class_name ?? '',
+                    $b->bulan_date_pay,
+                    $b->bulan_bill,
+                    '-',
+                    $b->bulan_pay_desc,
+                ]);
+            }
+            foreach ($bebasPays as $bp) {
+                $bebas = $bp->bebas;
+                fputcsv($file, [
+                    $no++,
+                    ($bebas->payment->pos->pos_name ?? '') . ' - T.P ' . ($bebas->payment->period->period_start ?? '') . '/' . ($bebas->payment->period->period_end ?? ''),
+                    $bebas->student->student_full_name ?? '',
+                    $bebas->student->class->class_name ?? '',
+                    $bp->bebas_pay_input_date,
+                    $bp->bebas_pay_bill,
+                    '-',
+                    $bp->bebas_pay_desc,
+                ]);
+            }
+            foreach ($debits as $d) {
+                fputcsv($file, [$no++, 'Pemasukan Lain', '-', '-', $d->debit_date, $d->debit_value, '-', $d->debit_desc]);
+            }
+            foreach ($kredits as $k) {
+                fputcsv($file, [$no++, 'Pengeluaran', '-', '-', $k->kredit_date, '-', $k->kredit_value, $k->kredit_desc]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
     public function cetak(Request $request) {
         $query = Bulan::with(['student.class', 'student.majors', 'payment.pos', 'payment.period', 'month'])
             ->where('bulan_status', 1);

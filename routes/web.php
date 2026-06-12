@@ -20,6 +20,10 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\MonthController;
 use App\Http\Controllers\ClassController;
 use App\Http\Controllers\MaintenanceController;
+use App\Http\Controllers\Portal\AuthController as PortalAuthController;
+use App\Http\Controllers\Portal\DashboardController as PortalDashboardController;
+use App\Http\Controllers\Portal\ProfileController as PortalProfileController;
+use App\Http\Controllers\Portal\PayoutController as PortalPayoutController;
 
 // Auth
 Route::get('/',  [AuthController::class, 'index']);
@@ -52,6 +56,16 @@ Route::middleware('auth.miba')->prefix('manage')->group(function () {
         Route::post('/jurusan',       [StudentController::class, 'storeMajors'])->name('majors.store');
         Route::put('/jurusan/{id}',   [StudentController::class, 'updateMajors'])->name('majors.update');
         Route::delete('/jurusan/{id}',[StudentController::class, 'destroyMajors'])->name('majors.destroy');
+
+        Route::get('/rpw/{id}',  [StudentController::class, 'resetPasswordForm'])->name('resetPasswordForm');
+        Route::post('/rpw/{id}', [StudentController::class, 'resetPassword'])->name('resetPassword');
+
+        Route::get('/kartu/{id}',  [StudentController::class, 'printPdf'])->name('printPdf');
+        Route::post('/kartu',      [StudentController::class, 'printCards'])->name('printCards');
+
+        Route::get('/import',  [StudentController::class, 'importForm'])->name('importForm');
+        Route::post('/import', [StudentController::class, 'importStore'])->name('importStore');
+        Route::get('/download-template', [StudentController::class, 'downloadTemplate'])->name('downloadTemplate');
         // Kenaikan kelas & kelulusan
         Route::get('/upgrade',  [StudentController::class, 'upgrade'])->name('upgrade');
         Route::get('/pass',     [StudentController::class, 'pass'])->name('pass');
@@ -80,6 +94,7 @@ Route::middleware('auth.miba')->prefix('manage')->group(function () {
         Route::post('/add-bebas/{payment}/{mode}',                [PaymentController::class, 'storeBebas'])->name('storeBebas');
         Route::get('/edit-bebas/{payment}/{student}/{bebas}',     [PaymentController::class, 'editBebas'])->name('editBebas');
         Route::post('/edit-bebas/{payment}/{student}/{bebas}',    [PaymentController::class, 'updateBebas'])->name('updateBebas');
+        Route::delete('/delete-bebas/{payment}/{student}/{bebas}',[PaymentController::class, 'deletePaymentBebas'])->name('deletePaymentBebas');
     });
 
     // Payout (pembayaran siswa) - alur seperti CI3
@@ -119,8 +134,11 @@ Route::middleware('auth.miba')->prefix('manage')->group(function () {
     Route::prefix('users')->name('users.')->group(function () {
         Route::get('/',           [UsersController::class, 'index'])->name('index');
         Route::post('/',          [UsersController::class, 'store'])->name('store');
+        Route::get('/{id}',       [UsersController::class, 'show'])->name('show');
         Route::put('/{id}',       [UsersController::class, 'update'])->name('update');
         Route::delete('/{id}',    [UsersController::class, 'destroy'])->name('destroy');
+        Route::get('/rpw/{id}',   [UsersController::class, 'resetPasswordForm'])->name('resetPasswordForm');
+        Route::post('/rpw/{id}',  [UsersController::class, 'resetPassword'])->name('resetPassword');
         Route::get('/roles',      [UsersController::class, 'roles'])->name('roles');
         Route::post('/roles',     [UsersController::class, 'storeRole'])->name('roles.store');
         Route::put('/roles/{id}', [UsersController::class, 'updateRole'])->name('roles.update');
@@ -137,6 +155,7 @@ Route::middleware('auth.miba')->prefix('manage')->group(function () {
         Route::get('/cetak',     [ReportController::class, 'cetak'])->name('cetak');
         Route::get('/bill',      [ReportController::class, 'bill'])->name('bill');
         Route::get('/bill-export', [ReportController::class, 'billExport'])->name('billExport');
+        Route::get('/export-keuangan', [ReportController::class, 'exportKeuangan'])->name('exportKeuangan');
     });
 
     // Month (Bulan)
@@ -178,4 +197,29 @@ Route::middleware('auth.miba')->prefix('manage')->group(function () {
     Route::get('/profile',      [ProfileController::class, 'index'])->name('profile.index');
     Route::post('/profile',     [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/profile/password', [ProfileController::class, 'changePassword'])->name('profile.password');
+});
+
+/*
+|--------------------------------------------------------------------------
+| PORTAL SISWA (Student Portal) - terpisah dari area "manage"
+|--------------------------------------------------------------------------
+*/
+Route::prefix('portal')->name('portal.')->group(function () {
+    // Auth
+    Route::get('/login',  [PortalAuthController::class, 'login'])->name('login');
+    Route::post('/login', [PortalAuthController::class, 'doLogin'])->name('doLogin');
+    Route::get('/logout', [PortalAuthController::class, 'logout'])->name('logout');
+
+    // Protected
+    Route::middleware('auth.student')->group(function () {
+        Route::get('/', [PortalDashboardController::class, 'index'])->name('dashboard');
+
+        Route::get('/payout', [PortalPayoutController::class, 'index'])->name('payout');
+
+        Route::get('/profile',          [PortalProfileController::class, 'index'])->name('profile');
+        Route::get('/profile/edit',     [PortalProfileController::class, 'edit'])->name('profile.edit');
+        Route::put('/profile',          [PortalProfileController::class, 'update'])->name('profile.update');
+        Route::get('/profile/cpw',      [PortalProfileController::class, 'changePasswordForm'])->name('profile.cpw');
+        Route::post('/profile/cpw',     [PortalProfileController::class, 'changePassword'])->name('profile.cpw.update');
+    });
 });

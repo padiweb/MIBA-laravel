@@ -12,7 +12,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'auth.miba' => \App\Http\Middleware\AuthMiddleware::class,
+            'auth.miba'    => \App\Http\Middleware\AuthMiddleware::class,
+            'auth.student' => \App\Http\Middleware\AuthStudentMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

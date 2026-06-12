@@ -16,6 +16,9 @@
       </div>
       <button class="btn btn-primary"><i class="fa fa-filter"></i> Filter</button>
       <a href="{{ route('report.index') }}" class="btn btn-default">Reset</a>
+      <a href="{{ route('report.exportKeuangan', ['ds'=>request('ds'),'de'=>request('de')]) }}" class="btn btn-success">
+        <i class="fa fa-file-excel-o"></i> Export Laporan Keuangan (CSV)
+      </a>
     </form>
 
     <div class="row">

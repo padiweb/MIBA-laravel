@@ -76,6 +76,10 @@
           <a href="{{ route('payment.editBebas', [$payment->payment_id, $row['student']->student_id, $row['bebas']->bebas_id]) }}" class="btn btn-xs btn-warning" title="Ubah Nominal">
             <i class="fa fa-edit"></i>
           </a>
+          <form action="{{ route('payment.deletePaymentBebas', [$payment->payment_id, $row['student']->student_id, $row['bebas']->bebas_id]) }}" method="POST" style="display:inline" onsubmit="return confirm('Hapus tagihan ini?')">
+            @csrf @method('DELETE')
+            <button class="btn btn-xs btn-danger" title="Hapus"><i class="fa fa-trash"></i></button>
+          </form>
         </td>
       </tr>
       @empty

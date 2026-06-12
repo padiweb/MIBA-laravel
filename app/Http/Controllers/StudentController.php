@@ -5,6 +5,9 @@ use Illuminate\Http\Request;
 use App\Models\Student;
 use App\Models\StudentClass;
 use App\Models\Majors;
+use App\Models\Setting;
+use App\Helpers\Barcode;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class StudentController extends Controller {
 
@@ -160,6 +163,133 @@ class StudentController extends Controller {
         Majors::findOrFail($id)->delete();
         return redirect()->route('student.majors')
             ->with('success', 'Jurusan berhasil dihapus');
+    }
+
+    // ===== Import Siswa (paste dari Excel) =====
+    public function importForm() {
+        return $this->render('student.import');
+    }
+
+    public function importStore(Request $request) {
+        $appLevel = $this->globalData()['app_level'] ?? '';
+        $rows = explode("\n", str_replace("\r", "", $request->input('rows', '')));
+
+        $success = 0; $failed = 0; $exist = 0;
+        $expectedCols = $appLevel == 'senior' ? 14 : 13;
+
+        foreach ($rows as $row) {
+            $row = trim($row);
+            if ($row === '') continue;
+            $exp = explode("\t", $row);
+            if (count($exp) != $expectedCols) { $failed++; continue; }
+
+            $nis = trim($exp[0]);
+            $bornDate = trim($exp[5]);
+
+            $classId = trim($exp[12]);
+            $class = StudentClass::find($classId);
+
+            if (Student::where('student_nis', $nis)->exists()) {
+                $exist++;
+                continue;
+            }
+            if (!$classId || !$class) {
+                return back()->with('failed', 'ID Kelas tidak ada (baris dengan NIS ' . $nis . ')');
+            }
+
+            Student::create([
+                'student_nis'            => $nis,
+                'student_nisn'           => trim($exp[1]),
+                'student_password'       => sha1(date('dmY', strtotime(str_replace('-','',$bornDate)))),
+                'student_full_name'      => trim($exp[2]),
+                'student_gender'         => trim($exp[3]),
+                'student_born_place'     => trim($exp[4]),
+                'student_born_date'      => $bornDate,
+                'student_hobby'          => trim($exp[6]),
+                'student_phone'          => trim($exp[7]),
+                'student_address'        => trim($exp[8]),
+                'student_name_of_mother' => trim($exp[9]),
+                'student_name_of_father' => trim($exp[10]),
+                'student_parent_phone'   => trim($exp[11]),
+                'class_class_id'         => $classId,
+                'majors_majors_id'       => $appLevel == 'senior' ? trim($exp[13]) : null,
+                'student_status'         => 1,
+                'student_input_date'     => now(),
+                'student_last_update'    => now(),
+            ]);
+            $success++;
+        }
+
+        $msg = "Sukses : $success baris, Gagal : $failed, Duplikat : $exist";
+        $this->writeLog('ADD', 'student', 'Import siswa: ' . $msg);
+        return redirect()->route('student.importForm')->with('success', $msg);
+    }
+
+    // Download template excel data siswa
+    public function downloadTemplate() {
+        $appLevel = $this->globalData()['app_level'] ?? '';
+        $file = $appLevel == 'senior' ? 'Template_Data_Siswa_Senior.xls' : 'Template_Data_Siswa_Primary.xls';
+        $path = public_path('media/template_excel/' . $file);
+        if (!file_exists($path)) {
+            $path = public_path('media/template_excel/Template_Data_Siswa.xls');
+        }
+        return response()->download($path);
+    }
+
+    // ===== Kartu Siswa (Cetak ID Card dengan Barcode) =====
+
+    private function cardSettings(): array {
+        return [
+            'school'   => Setting::getValue(1),
+            'address'  => Setting::getValue(2),
+            'phone'    => Setting::getValue(3),
+            'district' => Setting::getValue(4),
+            'city'     => Setting::getValue(5),
+        ];
+    }
+
+    // Cetak kartu satu siswa
+    public function printPdf($id) {
+        $student = Student::with(['class','majors'])->findOrFail($id);
+        $setting = $this->cardSettings();
+        $students = collect([$student]);
+
+        $pdf = Pdf::loadView('student.kartu', compact('students', 'setting'))
+                  ->setPaper('a4', 'portrait');
+        return $pdf->stream('kartu-' . $student->student_nis . '.pdf');
+    }
+
+    // Cetak kartu banyak siswa sekaligus (dari checkbox)
+    public function printCards(Request $request) {
+        $ids = $request->input('msg', []);
+        $students = Student::with(['class','majors'])->whereIn('student_id', $ids)->get();
+        $setting = $this->cardSettings();
+
+        $pdf = Pdf::loadView('student.kartu', compact('students', 'setting'))
+                  ->setPaper('a4', 'portrait');
+        return $pdf->stream('kartu-siswa.pdf');
+    }
+
+    // ===== Reset Password Siswa =====
+    public function resetPasswordForm($id) {
+        $student = Student::findOrFail($id);
+        return $this->render('student.reset_password', compact('student'));
+    }
+
+    public function resetPassword(Request $request, $id) {
+        $request->validate([
+            'student_password' => 'required|min:6',
+            'passconf'          => 'required|same:student_password',
+        ], [
+            'passconf.same' => 'Password dan konfirmasi password tidak cocok',
+        ]);
+
+        $student = Student::findOrFail($id);
+        $student->update(['student_password' => sha1($request->student_password)]);
+
+        $this->writeLog('UPDATE', 'student', 'Reset password siswa: ' . $student->student_full_name);
+
+        return redirect()->route('student.index')->with('success', 'Reset Password Berhasil');
     }
 
     // ===== Kenaikan Kelas =====
