@@ -85,7 +85,7 @@
 
   <footer class="main-footer">
     <div class="pull-right hidden-xs">{{ $app_name ?? '' }} v1.0</div>
-    &copy; {{ date('Y') }} SMK Alhikmah Altan
+    &copy; {{ date('Y') }} Padiweb Labs. All rights reserved.
   </footer>
 </div>
 
