@@ -14,4 +14,12 @@ class LogTrx extends Model {
     public function student() {
         return $this->belongsTo(Student::class, 'student_student_id', 'student_id');
     }
+
+    public function bulan() {
+        return $this->belongsTo(Bulan::class, 'bulan_bulan_id', 'bulan_id');
+    }
+
+    public function bebasPay() {
+        return $this->belongsTo(BebasPay::class, 'bebas_pay_bebas_pay_id', 'bebas_pay_id');
+    }
 }

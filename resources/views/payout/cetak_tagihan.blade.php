@@ -1,70 +1,96 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
-  <style>
-    body { font-family: Arial, sans-serif; font-size: 11px; }
-    h2, h3 { text-align: center; margin: 2px; }
-    .header { border-bottom: 2px solid #333; padding-bottom: 8px; margin-bottom: 10px; text-align: center; }
-    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-    th, td { border: 1px solid #333; padding: 4px 6px; }
-    th { background: #f0f0f0; }
-    .lunas { background: #d4edda; }
-    .belum { background: #f8d7da; }
-    .total-row { font-weight: bold; background: #f9f9f9; }
-  </style>
+<title>Detail Rincian Tagihan - {{ $student->student_full_name }}</title>
+<style type="text/css">
+  .upper { text-transform: uppercase; }
+  .style12 { font-size: 9px }
+  .title { font-size: 14pt; text-align: center; font-weight: bold; }
+  .tp { font-size: 14pt; text-align: center; font-weight: bold; }
+  body { font-family: sans-serif; }
+  table { border-collapse: collapse; font-size: 9pt; width: 100%; padding-left: 5px; }
+  th, td { border: 1px solid #333; padding: 4px; }
+</style>
 </head>
 <body>
-<div class="header">
-  <h2>{{ strtoupper($setting['school'] ?? '') }}</h2>
-  <h3>RINCIAN TAGIHAN PEMBAYARAN</h3>
-  <p>Tahun Pelajaran: {{ $period->period_start ?? '-' }}/{{ $period->period_end ?? '-' }}</p>
-</div>
+  <p class="title">RINCIAN PEMBAYARAN ADMINISTRASI</p>
+  <p class="tp">TAHUN PELAJARAN {{ $period->period_start ?? '' }}/{{ $period->period_end ?? '' }}</p>
 
-<table style="width:60%;margin-bottom:10px;border:none">
-  <tr><td style="border:none">NIS</td><td style="border:none">: {{ $student->student_nis }}</td></tr>
-  <tr><td style="border:none">Nama</td><td style="border:none">: <strong>{{ $student->student_full_name }}</strong></td></tr>
-  <tr><td style="border:none">Kelas</td><td style="border:none">: {{ $student->class->class_name ?? '-' }}</td></tr>
-  <tr><td style="border:none">Unit Pendidikan</td><td style="border:none">: {{ $student->majors->majors_name ?? '-' }}</td></tr>
-</table>
-
-<table>
-  <thead>
-    <tr><th>No</th><th>Jenis</th><th>Bulan</th><th>Tagihan</th><th>Status</th><th>Tgl Bayar</th><th>No. Bukti</th></tr>
-  </thead>
-  <tbody>
-    @php $total = 0; $totalBayar = 0; @endphp
-    @foreach($bulans as $i => $b)
-    <tr class="{{ $b->bulan_status ? 'lunas' : 'belum' }}">
-      <td>{{ $i+1 }}</td>
-      <td>{{ $b->payment->pos->pos_name ?? '-' }}</td>
-      <td>{{ $b->month->month_name ?? '-' }}</td>
-      <td style="text-align:right">Rp {{ number_format($b->bulan_bill, 0, ',', '.') }}</td>
-      <td style="text-align:center">{{ $b->bulan_status ? 'LUNAS' : 'BELUM' }}</td>
-      <td>{{ $b->bulan_date_pay ? \Carbon\Carbon::parse($b->bulan_date_pay)->format('d/m/Y') : '-' }}</td>
-      <td>{{ $b->bulan_number_pay ?? '-' }}</td>
+  <table width="100%" border="0" style="margin-bottom:10px">
+    <tr style="border:none">
+      <td width="150" style="border:none">Nomor Induk Santri</td>
+      <td width="5" style="border:none">:</td>
+      <td style="border:none">{{ $student->student_nis }}</td>
     </tr>
-    @php $total += $b->bulan_bill; if($b->bulan_status) $totalBayar += $b->bulan_bill; @endphp
+    <tr style="border:none">
+      <td style="border:none">Nama Lengkap</td>
+      <td style="border:none">:</td>
+      <td style="border:none">{{ $student->student_full_name }}</td>
+    </tr>
+    <tr style="border:none">
+      <td style="border:none">Kelas</td>
+      <td style="border:none">:</td>
+      <td style="border:none">{{ $student->class->class_name ?? '-' }}</td>
+    </tr>
+    @if(($app_level ?? '') == 'senior')
+    <tr style="border:none">
+      <td style="border:none">Unit Sekolah</td>
+      <td style="border:none">:</td>
+      <td style="border:none">{{ $student->majors->majors_name ?? '-' }}</td>
+    </tr>
+    @endif
+  </table>
+
+  <table width="100%">
+    <tr>
+      <th style="height:30px">NO</th>
+      <th>NAMA PEMBAYARAN</th>
+      <th>TANGGAL PEMBAYARAN</th>
+      <th>BIAYA</th>
+      <th>KETERANGAN</th>
+    </tr>
+    @php $i = 1; @endphp
+    @foreach($bulans as $row)
+      @php $mont = ($row->month_month_id <= 6) ? ($row->payment->period->period_start ?? '') : ($row->payment->period->period_end ?? ''); @endphp
+      <tr>
+        <td style="text-align:center">{{ $i }}</td>
+        <td style="white-space:nowrap;padding:0 5px">{{ $row->payment->pos->pos_name ?? '-' }} - ({{ $row->month->month_name ?? '' }} {{ $mont }})</td>
+        <td style="padding:0 5px">{{ $row->bulan_status==1 ? \Carbon\Carbon::parse($row->bulan_date_pay)->locale('id')->isoFormat('D MMMM Y') : '-' }}</td>
+        <td style="padding:0 5px;white-space:nowrap">{{ $row->bulan_status==0 ? 'Rp. '.number_format($row->bulan_bill,0,',','.') : 'Rp. -' }}</td>
+        <td style="padding:0 5px">{{ $row->bulan_status==1 ? 'Lunas' : 'Belum Lunas' }}</td>
+      </tr>
+      @php $i++; @endphp
     @endforeach
-  </tbody>
-  <tfoot>
-    <tr class="total-row">
-      <td colspan="3" style="text-align:right">TOTAL TAGIHAN</td>
-      <td style="text-align:right">Rp {{ number_format($total, 0, ',', '.') }}</td>
-      <td colspan="3"></td>
+
+    @foreach($bebas as $row)
+      @php $sisa = $row->bebas_bill - $row->bebas_total_pay; @endphp
+      <tr>
+        <td style="text-align:center">{{ $i }}</td>
+        <td style="padding:0 5px">{{ $row->payment->pos->pos_name ?? '-' }}</td>
+        <td style="padding:0 5px">{{ $row->bebas_total_pay > 0 ? \Carbon\Carbon::parse($row->bebas_last_update)->locale('id')->isoFormat('D MMMM Y') : '-' }}</td>
+        <td style="padding:0 5px">{{ $sisa != 0 ? 'Rp. '.number_format($sisa,0,',','.') : 'Rp. -' }}</td>
+        <td style="word-break:break-all;word-wrap:break-word;padding:0 5px">
+          {{ $sisa == 0 ? 'Lunas' : 'Belum Lunas' }}
+          @if($row->bebas_desc)
+            <br><b style="font-size:9px"><u>RINCIAN TAGIHAN: </u><br><i>{{ $row->bebas_desc }}</i></b>
+          @endif
+        </td>
+      </tr>
+      @php $i++; @endphp
+    @endforeach
+  </table>
+
+  <table style="width:100%;margin-top:25px;font-size:10pt;border:none">
+    <tr style="border:none">
+      <td style="border:none" class="upper">{{ $setting['city'] ?? '' }}, {{ \Carbon\Carbon::now()->locale('id')->isoFormat('D MMMM Y') }}</td>
     </tr>
-    <tr class="total-row">
-      <td colspan="3" style="text-align:right">SUDAH DIBAYAR</td>
-      <td style="text-align:right">Rp {{ number_format($totalBayar, 0, ',', '.') }}</td>
-      <td colspan="3"></td>
+    <tr style="border:none"><td style="border:none">Petugas</td></tr>
+  </table>
+  <br><br><br><br>
+  <table width="100%" style="font-size:10pt;border:none">
+    <tr style="border:none">
+      <td style="border:none"><strong><u><span class="upper">( {{ session('user_fullname') }} )</span></u></strong></td>
     </tr>
-    <tr class="total-row">
-      <td colspan="3" style="text-align:right">SISA TAGIHAN</td>
-      <td style="text-align:right">Rp {{ number_format($total-$totalBayar, 0, ',', '.') }}</td>
-      <td colspan="3"></td>
-    </tr>
-  </tfoot>
-</table>
-<p style="text-align:right;margin-top:10px">Dicetak: {{ now()->format('d/m/Y H:i') }}</p>
+  </table>
 </body>
 </html>

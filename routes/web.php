@@ -75,6 +75,9 @@ Route::middleware('auth.miba')->prefix('manage')->group(function () {
         Route::get('/pay/{payment_id}/{student_id}/{bulan_id}', [PayoutController::class, 'pay'])->name('pay');
         Route::get('/unpay/{payment_id}/{student_id}/{bulan_id}',[PayoutController::class, 'unpay'])->name('unpay');
         Route::post('/update-desc',                             [PayoutController::class, 'updateDesc'])->name('updateDesc');
+        Route::post('/payout-bebas',                            [PayoutController::class, 'payoutBebas'])->name('payoutBebas');
+        Route::get('/cetak-bukti',                              [PayoutController::class, 'cetakBukti'])->name('cetakBukti');
+        Route::get('/print-bill',                               [PayoutController::class, 'cetakTagihan'])->name('printBill');
         Route::get('/cetak/{bulan_id}',                         [PayoutController::class, 'cetak'])->name('cetak');
         Route::get('/cetak-tagihan',                            [PayoutController::class, 'cetakTagihan'])->name('cetakTagihan');
     });
