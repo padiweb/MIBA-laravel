@@ -66,6 +66,20 @@ Route::middleware('auth.miba')->prefix('manage')->group(function () {
         Route::get('/edit/{id}', [PaymentController::class, 'edit'])->name('edit');
         Route::put('/edit/{id}', [PaymentController::class, 'update'])->name('update');
         Route::delete('/{id}',   [PaymentController::class, 'destroy'])->name('destroy');
+
+        // ===== Tarif Pembayaran - Bulanan =====
+        Route::get('/view-bulan/{payment}',              [PaymentController::class, 'viewBulan'])->name('viewBulan');
+        Route::get('/add-bulan/{payment}/{mode}',        [PaymentController::class, 'addBulanForm'])->name('addBulanForm');
+        Route::post('/add-bulan/{payment}/{mode}',       [PaymentController::class, 'storeBulan'])->name('storeBulan');
+        Route::get('/edit-bulan/{payment}/{student}',    [PaymentController::class, 'editBulan'])->name('editBulan');
+        Route::post('/edit-bulan/{payment}/{student}',   [PaymentController::class, 'updateBulan'])->name('updateBulan');
+
+        // ===== Tarif Pembayaran - Bebas =====
+        Route::get('/view-bebas/{payment}',                       [PaymentController::class, 'viewBebas'])->name('viewBebas');
+        Route::get('/add-bebas/{payment}/{mode}',                 [PaymentController::class, 'addBebasForm'])->name('addBebasForm');
+        Route::post('/add-bebas/{payment}/{mode}',                [PaymentController::class, 'storeBebas'])->name('storeBebas');
+        Route::get('/edit-bebas/{payment}/{student}/{bebas}',     [PaymentController::class, 'editBebas'])->name('editBebas');
+        Route::post('/edit-bebas/{payment}/{student}/{bebas}',    [PaymentController::class, 'updateBebas'])->name('updateBebas');
     });
 
     // Payout (pembayaran siswa) - alur seperti CI3
@@ -76,6 +90,8 @@ Route::middleware('auth.miba')->prefix('manage')->group(function () {
         Route::get('/unpay/{payment_id}/{student_id}/{bulan_id}',[PayoutController::class, 'unpay'])->name('unpay');
         Route::post('/update-desc',                             [PayoutController::class, 'updateDesc'])->name('updateDesc');
         Route::post('/payout-bebas',                            [PayoutController::class, 'payoutBebas'])->name('payoutBebas');
+        Route::get('/riwayat-bebas/{bebas_id}',                 [PayoutController::class, 'riwayatBebas'])->name('riwayatBebas');
+        Route::get('/delete-pay-free/{payment_id}/{student_id}/{bebas_id}/{bebas_pay_id}', [PayoutController::class, 'deletePayFree'])->name('deletePayFree');
         Route::get('/cetak-bukti',                              [PayoutController::class, 'cetakBukti'])->name('cetakBukti');
         Route::get('/print-bill',                               [PayoutController::class, 'cetakTagihan'])->name('printBill');
         Route::get('/cetak/{bulan_id}',                         [PayoutController::class, 'cetak'])->name('cetak');

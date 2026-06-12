@@ -109,13 +109,13 @@ class ReportController extends Controller {
                 $bulans = Bulan::with(['payment.pos', 'month'])
                     ->where('student_student_id', $student->student_id)
                     ->whereHas('payment', fn($q) => $q->where('period_period_id', $request->p)
-                        ->where('payment_type', 'bulanan'))
+                        ->where('payment_type', 'BULAN'))
                     ->get();
 
                 $bebas = Bebas::with('payment.pos')
                     ->where('student_student_id', $student->student_id)
                     ->whereHas('payment', fn($q) => $q->where('period_period_id', $request->p)
-                        ->where('payment_type', 'bebas'))
+                        ->where('payment_type', 'BEBAS'))
                     ->get();
 
                 $monthCells = [];
@@ -197,7 +197,7 @@ class ReportController extends Controller {
             $no = 1;
             foreach ($students as $student) {
                 $bulans = Bulan::where('student_student_id', $student->student_id)
-                    ->whereHas('payment', fn($q) => $q->where('period_period_id', $request->p)->where('payment_type','bulanan'))
+                    ->whereHas('payment', fn($q) => $q->where('period_period_id', $request->p)->where('payment_type','BULAN'))
                     ->get();
 
                 $row = [$no++, $student->class->class_name ?? '-', $student->student_full_name];

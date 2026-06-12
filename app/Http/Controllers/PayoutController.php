@@ -34,7 +34,7 @@ class PayoutController extends Controller {
             if ($student) {
                 // Daftar jenis pembayaran bulanan untuk tahun pelajaran terpilih
                 $paymentsQuery = Payment::with(['pos', 'period'])
-                    ->where('payment_type', 'bulanan')
+                    ->where('payment_type', 'BULAN')
                     ->whereHas('bulans', fn($q) => $q->where('student_student_id', $student->student_id));
 
                 if ($request->filled('n')) {
@@ -299,6 +299,38 @@ class PayoutController extends Controller {
             'student', 'period', 'bulans', 'free', 'summonth', 'sumbeb', 'setting', 'request', 'petugas'
         ))->setPaper('a4', 'portrait');
         return $pdf->stream('bukti-' . $bulan_id . '.pdf');
+    }
+
+    // Riwayat angsuran/cicilan untuk satu bebas_id (ditampilkan di modal/iframe)
+    public function riwayatBebas($bebas_id) {
+        $bebas = Bebas::with('payment.pos')->findOrFail($bebas_id);
+        $bills = BebasPay::where('bebas_bebas_id', $bebas_id)
+            ->orderBy('bebas_pay_input_date')
+            ->get();
+
+        $totalPay = $bills->sum('bebas_pay_bill');
+
+        return view('payout.riwayat_bebas', compact('bebas', 'bills', 'totalPay'));
+    }
+
+    // Hapus satu transaksi angsuran/cicilan
+    public function deletePayFree($payment_id, $student_id, $bebas_id, $bebas_pay_id) {
+        $bebasPay = BebasPay::findOrFail($bebas_pay_id);
+        $bebas = Bebas::findOrFail($bebas_id);
+
+        $bebas->decrement('bebas_total_pay', $bebasPay->bebas_pay_bill);
+        $bebas->update(['bebas_last_update' => now()]);
+
+        LogTrx::where('student_student_id', $student_id)
+            ->where('bebas_pay_bebas_pay_id', $bebas_pay_id)
+            ->delete();
+
+        $bebasPay->delete();
+
+        $this->writeLog('DELETE', 'payout', 'Hapus angsuran bebas ID ' . $bebas_pay_id);
+
+        return redirect()->route('payout.riwayatBebas', $bebas_id)
+            ->with('success', 'Delete Berhasil');
     }
 
     private function generateNomorBukti(): string {

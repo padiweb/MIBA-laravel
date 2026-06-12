@@ -66,6 +66,11 @@
     <div class="box box-success">
       <div class="box-header with-border">
         <h3 class="box-title">Detail Identitas</h3>
+        @if(($user_role_id ?? 0) == 1)
+          <a href="{{ route('payment.editBulan', [$payment->payment_id, $student->student_id]) }}" class="btn btn-primary btn-xs pull-right">
+            <i class="fa fa-edit"></i> Edit Tarif Pembayaran
+          </a>
+        @endif
       </div>
       <div class="box-body">
         @if($student->student_img)

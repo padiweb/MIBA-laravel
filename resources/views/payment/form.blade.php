@@ -46,8 +46,8 @@
         <label>Tipe <span class="text-danger">*</span></label>
         <select name="payment_type" class="form-control" required>
           <option value="">-- Pilih Tipe --</option>
-          <option value="bulanan" {{ old('payment_type', $payment->payment_type ?? '') == 'bulanan' ? 'selected' : '' }}>Bulanan</option>
-          <option value="bebas" {{ old('payment_type', $payment->payment_type ?? '') == 'bebas' ? 'selected' : '' }}>Bebas</option>
+          <option value="BULAN" {{ old('payment_type', $payment->payment_type ?? '') == 'BULAN' ? 'selected' : '' }}>Bulanan</option>
+          <option value="BEBAS" {{ old('payment_type', $payment->payment_type ?? '') == 'BEBAS' ? 'selected' : '' }}>Bebas</option>
         </select>
       </div>
       <div class="box-footer">
