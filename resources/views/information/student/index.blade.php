@@ -23,7 +23,7 @@
         @endforeach
       </select>
       <select name="majors_id" class="form-control">
-        <option value="">Semua Unit Pendidikan</option>
+        <option value="">Semua Jurusan</option>
         @foreach($majors as $m)
           <option value="{{ $m->majors_id }}" {{ request('majors_id')==$m->majors_id?'selected':'' }}>
             {{ $m->majors_name }}
@@ -38,7 +38,7 @@
       <thead>
         <tr>
           <th>No</th><th>NIS</th><th>Nama Lengkap</th>
-          <th>Kelas</th><th>Unit Pendidikan</th><th>Status</th><th>Aksi</th>
+          <th>Kelas</th><th>Jurusan</th><th>Status</th><th>Aksi</th>
         </tr>
       </thead>
       <tbody>

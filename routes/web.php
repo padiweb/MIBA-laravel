@@ -17,6 +17,9 @@ use App\Http\Controllers\HolidayController;
 use App\Http\Controllers\LogsController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\MonthController;
+use App\Http\Controllers\ClassController;
+use App\Http\Controllers\MaintenanceController;
 
 // Auth
 Route::get('/',  [AuthController::class, 'index']);
@@ -49,6 +52,10 @@ Route::middleware('auth.miba')->prefix('manage')->group(function () {
         Route::post('/jurusan',       [StudentController::class, 'storeMajors'])->name('majors.store');
         Route::put('/jurusan/{id}',   [StudentController::class, 'updateMajors'])->name('majors.update');
         Route::delete('/jurusan/{id}',[StudentController::class, 'destroyMajors'])->name('majors.destroy');
+        // Kenaikan kelas & kelulusan
+        Route::get('/upgrade',  [StudentController::class, 'upgrade'])->name('upgrade');
+        Route::get('/pass',     [StudentController::class, 'pass'])->name('pass');
+        Route::post('/multiple',[StudentController::class, 'multiple'])->name('multiple');
     });
 
     // Payment (jenis pembayaran)
@@ -61,13 +68,15 @@ Route::middleware('auth.miba')->prefix('manage')->group(function () {
         Route::delete('/{id}',   [PaymentController::class, 'destroy'])->name('destroy');
     });
 
-    // Payout (pembayaran siswa)
+    // Payout (pembayaran siswa) - alur seperti CI3
     Route::prefix('payout')->name('payout.')->group(function () {
-        Route::get('/',           [PayoutController::class, 'index'])->name('index');
-        Route::get('/tambah',     [PayoutController::class, 'create'])->name('create');
-        Route::post('/tambah',    [PayoutController::class, 'store'])->name('store');
-        Route::get('/cetak/{id}', [PayoutController::class, 'cetak'])->name('cetak');
-        Route::delete('/{id}',    [PayoutController::class, 'destroy'])->name('destroy');
+        Route::get('/',                                          [PayoutController::class, 'index'])->name('index');
+        Route::get('/bayar/{payment_id}/{student_id}',          [PayoutController::class, 'bayar'])->name('bayar');
+        Route::get('/pay/{payment_id}/{student_id}/{bulan_id}', [PayoutController::class, 'pay'])->name('pay');
+        Route::get('/unpay/{payment_id}/{student_id}/{bulan_id}',[PayoutController::class, 'unpay'])->name('unpay');
+        Route::post('/update-desc',                             [PayoutController::class, 'updateDesc'])->name('updateDesc');
+        Route::get('/cetak/{bulan_id}',                         [PayoutController::class, 'cetak'])->name('cetak');
+        Route::get('/cetak-tagihan',                            [PayoutController::class, 'cetakTagihan'])->name('cetakTagihan');
     });
 
     // Period
@@ -105,9 +114,32 @@ Route::middleware('auth.miba')->prefix('manage')->group(function () {
 
     // Report
     Route::prefix('report')->name('report.')->group(function () {
-        Route::get('/',       [ReportController::class, 'index'])->name('index');
-        Route::get('/cetak',  [ReportController::class, 'cetak'])->name('cetak');
-        Route::get('/excel',  [ReportController::class, 'excel'])->name('excel');
+        Route::get('/',          [ReportController::class, 'index'])->name('index');
+        Route::get('/cetak',     [ReportController::class, 'cetak'])->name('cetak');
+        Route::get('/bill',      [ReportController::class, 'bill'])->name('bill');
+        Route::get('/bill-export', [ReportController::class, 'billExport'])->name('billExport');
+    });
+
+    // Month (Bulan)
+    Route::prefix('month')->name('month.')->group(function () {
+        Route::get('/',        [MonthController::class, 'index'])->name('index');
+        Route::post('/',       [MonthController::class, 'store'])->name('store');
+        Route::put('/{id}',    [MonthController::class, 'update'])->name('update');
+        Route::delete('/{id}', [MonthController::class, 'destroy'])->name('destroy');
+    });
+
+    // Class (Kelas - standalone Akademik)
+    Route::prefix('class')->name('class.')->group(function () {
+        Route::get('/',        [ClassController::class, 'index'])->name('index');
+        Route::post('/',       [ClassController::class, 'store'])->name('store');
+        Route::put('/{id}',    [ClassController::class, 'update'])->name('update');
+        Route::delete('/{id}', [ClassController::class, 'destroy'])->name('destroy');
+    });
+
+    // Maintenance (Backup)
+    Route::prefix('maintenance')->name('maintenance.')->group(function () {
+        Route::get('/',       [MaintenanceController::class, 'index'])->name('index');
+        Route::get('/backup', [MaintenanceController::class, 'backup'])->name('backup');
     });
 
     // Debit & Kredit

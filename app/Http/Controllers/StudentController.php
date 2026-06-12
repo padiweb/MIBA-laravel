@@ -54,7 +54,7 @@ class StudentController extends Controller {
         if ($request->hasFile('student_img')) {
             $file = $request->file('student_img');
             $filename = time() . '_' . $file->getClientOriginalName();
-            $file->move(public_path('uploads/students'), $filename);
+            $file->move(public_path('uploads/student'), $filename);
             $data['student_img'] = $filename;
         }
 
@@ -85,7 +85,7 @@ class StudentController extends Controller {
         if ($request->hasFile('student_img')) {
             $file = $request->file('student_img');
             $filename = time() . '_' . $file->getClientOriginalName();
-            $file->move(public_path('uploads/students'), $filename);
+            $file->move(public_path('uploads/student'), $filename);
             $data['student_img'] = $filename;
         }
 
@@ -160,5 +160,67 @@ class StudentController extends Controller {
         Majors::findOrFail($id)->delete();
         return redirect()->route('student.majors')
             ->with('success', 'Jurusan berhasil dihapus');
+    }
+
+    // ===== Kenaikan Kelas =====
+    public function upgrade(Request $request) {
+        $query = Student::with(['class','majors'])->active();
+        if ($request->filled('pr')) $query->where('class_class_id', $request->pr);
+        $students = $query->orderBy('class_class_id')->orderBy('student_full_name')->paginate(30)->withQueryString();
+        $classes  = StudentClass::orderBy('class_name')->get();
+        return $this->render('student.upgrade', compact('students', 'classes'));
+    }
+
+    // ===== Kelulusan =====
+    public function pass(Request $request) {
+        $queryActive = Student::with(['class','majors'])->active();
+        if ($request->filled('pr')) $queryActive->where('class_class_id', $request->pr);
+        $notpass = $queryActive->orderBy('class_class_id')->orderBy('student_full_name')->paginate(30, ['*'], 'notpass_page')->withQueryString();
+
+        $pass = Student::with(['class','majors'])->where('student_status', 0)
+            ->orderBy('student_full_name')->paginate(30, ['*'], 'pass_page')->withQueryString();
+
+        $classes = StudentClass::orderBy('class_name')->get();
+        return $this->render('student.pass', compact('notpass', 'pass', 'classes'));
+    }
+
+    // ===== Aksi massal: kelulusan, kembali aktif, kenaikan kelas =====
+    public function multiple(Request $request) {
+        $action = $request->input('action');
+        $ids    = $request->input('msg', []);
+
+        if ($action == 'pass') {
+            foreach ($ids as $id) {
+                Student::where('student_id', $id)->update([
+                    'student_status' => 0,
+                    'student_last_update' => now(),
+                ]);
+            }
+            $this->writeLog('UPDATE', 'student', 'Proses Lulus: ' . count($ids) . ' siswa');
+            return redirect()->route('student.pass')->with('success', 'Proses Lulus berhasil');
+
+        } elseif ($action == 'notpass') {
+            foreach ($ids as $id) {
+                Student::where('student_id', $id)->update([
+                    'student_status' => 1,
+                    'student_last_update' => now(),
+                ]);
+            }
+            $this->writeLog('UPDATE', 'student', 'Proses Kembali Aktif: ' . count($ids) . ' siswa');
+            return redirect()->route('student.pass')->with('success', 'Proses Kembali berhasil');
+
+        } elseif ($action == 'upgrade') {
+            $classId = $request->input('class_id');
+            foreach ($ids as $id) {
+                Student::where('student_id', $id)->update([
+                    'class_class_id' => $classId,
+                    'student_last_update' => now(),
+                ]);
+            }
+            $this->writeLog('UPDATE', 'student', 'Proses Kenaikan Kelas: ' . count($ids) . ' siswa');
+            return redirect()->route('student.upgrade')->with('success', 'Proses Kenaikan Kelas berhasil');
+        }
+
+        return redirect()->route('student.index');
     }
 }
