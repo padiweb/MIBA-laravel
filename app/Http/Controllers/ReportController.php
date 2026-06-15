@@ -302,3 +302,79 @@ class ReportController extends Controller {
         return response()->stream($callback, 200, $headers);
     }
 }
+
+    // Export Rekapitulasi Pembayaran Per-Kelas ke CSV (pengganti PHPExcel report_bill_detail)
+    public function billDetailExport(Request $request) {
+        $periodId = $request->p;
+        $classId  = $request->c;
+        $majorsId = $request->k;
+
+        $studentQuery = Student::with(['class','majors'])
+            ->where('student_status', 1)
+            ->when($periodId, fn($q) => $q->whereHas('payments', fn($q2) => $q2->whereHas('payment', fn($q3) => $q3->where('period_period_id', $periodId))))
+            ->when($classId,  fn($q) => $q->where('class_class_id', $classId))
+            ->when($majorsId, fn($q) => $q->where('majors_majors_id', $majorsId))
+            ->orderBy('student_full_name');
+
+        $students = $studentQuery->get();
+        $period   = Period::find($periodId);
+        $school   = Setting::getValue(1);
+
+        $filename = 'Rekapitulasi_Pembayaran_'.date('Ymd').'.csv';
+        $headers  = ['Content-Type'=>'text/csv','Content-Disposition'=>"attachment; filename=\"$filename\""];
+
+        $callback = function() use ($students, $period, $periodId, $school) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, ['REKAPITULASI PEMBAYARAN SISWA']);
+            fputcsv($file, [$school]);
+            fputcsv($file, ['Tahun Pelajaran: '.($period?$period->period_start.'/'.$period->period_end:'Semua')]);
+            fputcsv($file, ['Tanggal Unduh: '.\Carbon\Carbon::now()->locale('id')->isoFormat('D MMMM Y, HH:mm')]);
+            fputcsv($file, []);
+            fputcsv($file, ['NO','NIS','NAMA','KELAS','JENIS PEMBAYARAN','TAGIHAN','DIBAYAR','SISA','STATUS']);
+
+            $no = 1;
+            foreach ($students as $student) {
+                $bulans = \App\Models\Bulan::with(['payment.pos','month'])
+                    ->where('student_student_id', $student->student_id)
+                    ->when($periodId, fn($q) => $q->whereHas('payment', fn($q2) => $q2->where('period_period_id', $periodId)))
+                    ->get();
+
+                $bebases = \App\Models\Bebas::with(['payment.pos'])
+                    ->where('student_student_id', $student->student_id)
+                    ->when($periodId, fn($q) => $q->whereHas('payment', fn($q2) => $q2->where('period_period_id', $periodId)))
+                    ->get();
+
+                foreach ($bulans as $b) {
+                    fputcsv($file, [
+                        $no++,
+                        $student->student_nis,
+                        $student->student_full_name,
+                        $student->class->class_name ?? '',
+                        ($b->payment->pos->pos_name ?? '') . ' - ' . ($b->month->month_name ?? ''),
+                        $b->bulan_bill,
+                        $b->bulan_status ? $b->bulan_bill : 0,
+                        $b->bulan_status ? 0 : $b->bulan_bill,
+                        $b->bulan_status ? 'Lunas' : 'Belum Lunas',
+                    ]);
+                }
+
+                foreach ($bebases as $b) {
+                    $sisa = $b->bebas_bill - $b->bebas_total_pay;
+                    fputcsv($file, [
+                        $no++,
+                        $student->student_nis,
+                        $student->student_full_name,
+                        $student->class->class_name ?? '',
+                        $b->payment->pos->pos_name ?? '',
+                        $b->bebas_bill,
+                        $b->bebas_total_pay,
+                        $sisa,
+                        $sisa <= 0 ? 'Lunas' : 'Belum Lunas',
+                    ]);
+                }
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }

@@ -47,6 +47,11 @@
             <a class="btn btn-success" href="{{ route('report.billExport', request()->query()) }}">
               <i class="fa fa-file-excel-o"></i> Export CSV
             </a>
+            @if(request('p'))
+            <a class="btn btn-warning" href="{{ route('report.billDetailExport', request()->query()) }}">
+              <i class="fa fa-file-excel-o"></i> Export Rekapitulasi
+            </a>
+            @endif
             <button type="button" class="btn btn-info" onclick="window.print()"><i class="fa fa-print"></i> Print</button>
           @endif
         </div>

@@ -36,6 +36,7 @@ Route::middleware('auth.miba')->prefix('manage')->group(function () {
 
     // Dashboard
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/events', [DashboardController::class, 'getEvents'])->name('dashboard.events');
 
     // Student
     Route::prefix('student')->name('student.')->group(function () {
@@ -155,7 +156,8 @@ Route::middleware('auth.miba')->prefix('manage')->group(function () {
         Route::get('/cetak',     [ReportController::class, 'cetak'])->name('cetak');
         Route::get('/bill',      [ReportController::class, 'bill'])->name('bill');
         Route::get('/bill-export', [ReportController::class, 'billExport'])->name('billExport');
-        Route::get('/export-keuangan', [ReportController::class, 'exportKeuangan'])->name('exportKeuangan');
+        Route::get('/export-keuangan',   [ReportController::class, 'exportKeuangan'])->name('exportKeuangan');
+        Route::get('/bill-detail-export',[ReportController::class, 'billDetailExport'])->name('billDetailExport');
     });
 
     // Month (Bulan)
@@ -182,7 +184,10 @@ Route::middleware('auth.miba')->prefix('manage')->group(function () {
 
     // Debit & Kredit
     Route::resource('debit',  DebitController::class)->except(['show']);
+    Route::post('/debit/glob',    [DebitController::class, 'storeGlob'])->name('debit.storeGlob');
+
     Route::resource('kredit', KreditController::class)->except(['show']);
+    Route::post('/kredit/glob',   [KreditController::class, 'storeGlob'])->name('kredit.storeGlob');
 
     // Information
     Route::resource('information', InformationController::class)->except(['show']);
@@ -194,8 +199,10 @@ Route::middleware('auth.miba')->prefix('manage')->group(function () {
     Route::get('/logs', [LogsController::class, 'index'])->name('logs.index');
 
     // Profile
-    Route::get('/profile',      [ProfileController::class, 'index'])->name('profile.index');
-    Route::post('/profile',     [ProfileController::class, 'update'])->name('profile.update');
+    Route::get('/profile',           [ProfileController::class, 'index'])->name('profile.index');
+    Route::get('/profile/edit',      [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::post('/profile',          [ProfileController::class, 'update'])->name('profile.update');
+    Route::get('/profile/cpw',       [ProfileController::class, 'cpw'])->name('profile.cpw');
     Route::post('/profile/password', [ProfileController::class, 'changePassword'])->name('profile.password');
 });
 
