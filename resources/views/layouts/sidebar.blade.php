@@ -1,168 +1,134 @@
-<aside class="main-sidebar">
-  <section class="sidebar">
-    <ul class="sidebar-menu" data-widget="tree">
+{{-- Dashboard --}}
+<a href="{{ route('dashboard') }}" class="miba-nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+  <i class="fa fa-tachometer"></i> Dashboard
+</a>
 
-      {{-- Dashboard - semua role --}}
-      <li class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">
-        <a href="{{ route('dashboard') }}">
-          <i class="fa fa-tachometer"></i><span>Dashboard</span>
-        </a>
-      </li>
+{{-- Transaksi Siswa --}}
+@if(($user_role_id ?? 0) != 3)
+<a href="{{ route('payout.index') }}" class="miba-nav-item {{ request()->routeIs('payout.*') ? 'active' : '' }}">
+  <i class="fa fa-exchange"></i> Transaksi Siswa
+</a>
+@endif
 
-      {{-- Transaksi Siswa - semua kecuali BENDAHARA(3) --}}
-      @if(($user_role_id ?? 0) != 3)
-      <li class="{{ request()->routeIs('payout.*') ? 'active' : '' }}">
-        <a href="{{ route('payout.index') }}">
-          <i class="fa fa-google-wallet"></i><span>Transaksi Siswa</span>
-        </a>
-      </li>
-      @endif
+{{-- Laporan - non-SUPERUSER --}}
+@if(($user_role_id ?? 0) != 1)
+<div class="miba-nav-section">Laporan</div>
+<button class="miba-nav-item" data-sub="sub-laporan-user" aria-expanded="false">
+  <i class="fa fa-file-text-o"></i> Laporan
+  <i class="fa fa-chevron-down chevron"></i>
+</button>
+<div class="miba-nav-sub" id="sub-laporan-user">
+  <a href="{{ route('report.index') }}" class="miba-nav-item {{ request()->routeIs('report.index') ? 'active' : '' }}">
+    <i class="fa fa-circle-o"></i> Total Keuangan
+  </a>
+  <a href="{{ route('report.bill') }}" class="miba-nav-item {{ request()->routeIs('report.bill') ? 'active' : '' }}">
+    <i class="fa fa-circle-o"></i> Per-Kelas
+  </a>
+</div>
+@endif
 
-      {{-- Laporan - untuk non-SUPERUSER(1) --}}
-      @if(($user_role_id ?? 0) != 1)
-      <li class="treeview {{ request()->routeIs('report.*') ? 'active' : '' }}">
-        <a href="#">
-          <i class="fa fa-file-text"></i><span>Laporan</span>
-          <span class="pull-right-container"><i class="fa fa-angle-left pull-right"></i></span>
-        </a>
-        <ul class="treeview-menu">
-          <li class="{{ request()->routeIs('report.index') ? 'active' : '' }}">
-            <a href="{{ route('report.index') }}"><i class="fa fa-circle-o"></i> Laporan Total Keuangan</a>
-          </li>
-          <li class="{{ request()->routeIs('report.bill') ? 'active' : '' }}">
-            <a href="{{ route('report.bill') }}"><i class="fa fa-circle-o"></i> Laporan Per-Kelas</a>
-          </li>
-        </ul>
-      </li>
-      @endif
+{{-- Transaksi Umum --}}
+@if(($user_role_id ?? 0) != 3)
+<div class="miba-nav-section">Keuangan</div>
+<button class="miba-nav-item" data-sub="sub-trx" aria-expanded="false">
+  <i class="fa fa-money"></i> Transaksi Umum
+  <i class="fa fa-chevron-down chevron"></i>
+</button>
+<div class="miba-nav-sub" id="sub-trx">
+  <a href="{{ route('kredit.index') }}" class="miba-nav-item {{ request()->routeIs('kredit.*') ? 'active' : '' }}">
+    <i class="fa fa-circle-o"></i> Pengeluaran
+  </a>
+  <a href="{{ route('debit.index') }}" class="miba-nav-item {{ request()->routeIs('debit.*') ? 'active' : '' }}">
+    <i class="fa fa-circle-o"></i> Pemasukan
+  </a>
+</div>
+@endif
 
-      {{-- Transaksi Umum - semua kecuali BENDAHARA(3) --}}
-      @if(($user_role_id ?? 0) != 3)
-      <li class="treeview {{ request()->routeIs('kredit.*') || request()->routeIs('debit.*') ? 'active' : '' }}">
-        <a href="#">
-          <i class="fa fa-shopping-cart"></i><span>Transaksi Umum</span>
-          <span class="pull-right-container"><i class="fa fa-angle-left pull-right"></i></span>
-        </a>
-        <ul class="treeview-menu">
-          <li class="{{ request()->routeIs('kredit.*') ? 'active' : '' }}">
-            <a href="{{ route('kredit.index') }}"><i class="fa fa-circle-o"></i> Pengeluaran</a>
-          </li>
-          <li class="{{ request()->routeIs('debit.*') ? 'active' : '' }}">
-            <a href="{{ route('debit.index') }}"><i class="fa fa-circle-o"></i> Pemasukan</a>
-          </li>
-        </ul>
-      </li>
-      @endif
+{{-- SUPERUSER only --}}
+@if(($user_role_id ?? 0) == 1)
 
-      {{-- Pengaturan Pembayaran - SUPERUSER(1) only --}}
-      @if(($user_role_id ?? 0) == 1)
-      <li class="treeview {{ request()->routeIs('pos.*') || request()->routeIs('payment.*') ? 'active' : '' }}">
-        <a href="#">
-          <i class="fa fa-cog"></i><span>Pengaturan Pembayaran</span>
-          <span class="pull-right-container"><i class="fa fa-angle-left pull-right"></i></span>
-        </a>
-        <ul class="treeview-menu">
-          <li class="{{ request()->routeIs('pos.*') ? 'active' : '' }}">
-            <a href="{{ route('pos.index') }}"><i class="fa fa-circle-o"></i> Nama Pembayaran</a>
-          </li>
-          <li class="{{ request()->routeIs('payment.*') ? 'active' : '' }}">
-            <a href="{{ route('payment.index') }}"><i class="fa fa-circle-o"></i> Jenis Pembayaran</a>
-          </li>
-        </ul>
-      </li>
-      @endif
+<div class="miba-nav-section">Pembayaran</div>
+<button class="miba-nav-item" data-sub="sub-payment" aria-expanded="false">
+  <i class="fa fa-cog"></i> Pengaturan Pembayaran
+  <i class="fa fa-chevron-down chevron"></i>
+</button>
+<div class="miba-nav-sub" id="sub-payment">
+  <a href="{{ route('pos.index') }}" class="miba-nav-item {{ request()->routeIs('pos.*') ? 'active' : '' }}">
+    <i class="fa fa-circle-o"></i> Nama Pembayaran
+  </a>
+  <a href="{{ route('payment.index') }}" class="miba-nav-item {{ request()->routeIs('payment.*') ? 'active' : '' }}">
+    <i class="fa fa-circle-o"></i> Jenis Pembayaran
+  </a>
+</div>
 
-      {{-- Akademik - SUPERUSER(1) only --}}
-      @if(($user_role_id ?? 0) == 1)
-      <li class="treeview {{ request()->routeIs('setting.*') || request()->routeIs('month.*') || request()->routeIs('period.*') || request()->routeIs('class.*') || request()->routeIs('student.*') ? 'active' : '' }}">
-        <a href="#">
-          <i class="fa fa-users"></i><span>Akademik</span>
-          <span class="pull-right-container"><i class="fa fa-angle-left pull-right"></i></span>
-        </a>
-        <ul class="treeview-menu">
-          <li class="{{ request()->routeIs('setting.*') ? 'active' : '' }}">
-            <a href="{{ route('setting.index') }}"><i class="fa fa-circle-o"></i> Profil Yayasan</a>
-          </li>
-          <li class="{{ request()->routeIs('month.*') ? 'active' : '' }}">
-            <a href="{{ route('month.index') }}"><i class="fa fa-circle-o"></i> Bulan</a>
-          </li>
-          <li class="{{ request()->routeIs('period.*') ? 'active' : '' }}">
-            <a href="{{ route('period.index') }}"><i class="fa fa-circle-o"></i> Tahun Pelajaran</a>
-          </li>
-          <li class="{{ request()->routeIs('class.*') ? 'active' : '' }}">
-            <a href="{{ route('class.index') }}"><i class="fa fa-circle-o"></i> Kelas</a>
-          </li>
+<div class="miba-nav-section">Akademik</div>
+<button class="miba-nav-item" data-sub="sub-akademik" aria-expanded="false">
+  <i class="fa fa-university"></i> Akademik
+  <i class="fa fa-chevron-down chevron"></i>
+</button>
+<div class="miba-nav-sub" id="sub-akademik">
+  <a href="{{ route('setting.index') }}" class="miba-nav-item {{ request()->routeIs('setting.*') ? 'active' : '' }}">
+    <i class="fa fa-circle-o"></i> Profil Yayasan
+  </a>
+  <a href="{{ route('month.index') }}" class="miba-nav-item {{ request()->routeIs('month.*') ? 'active' : '' }}">
+    <i class="fa fa-circle-o"></i> Bulan
+  </a>
+  <a href="{{ route('period.index') }}" class="miba-nav-item {{ request()->routeIs('period.*') ? 'active' : '' }}">
+    <i class="fa fa-circle-o"></i> Tahun Pelajaran
+  </a>
+  <a href="{{ route('class.index') }}" class="miba-nav-item {{ request()->routeIs('class.*') ? 'active' : '' }}">
+    <i class="fa fa-circle-o"></i> Kelas
+  </a>
+  @if(($app_level ?? '') == 'senior')
+  <a href="{{ route('student.majors') }}" class="miba-nav-item {{ request()->routeIs('student.majors') ? 'active' : '' }}">
+    <i class="fa fa-circle-o"></i> Unit Pendidikan
+  </a>
+  @endif
+  <a href="{{ route('student.index') }}" class="miba-nav-item {{ request()->routeIs('student.index') || request()->routeIs('student.show') || request()->routeIs('student.edit') || request()->routeIs('student.create') ? 'active' : '' }}">
+    <i class="fa fa-circle-o"></i> Peserta Didik
+  </a>
+  @if(($app_level ?? '') == 'senior')
+  <a href="{{ route('student.upgrade') }}" class="miba-nav-item {{ request()->routeIs('student.upgrade') ? 'active' : '' }}">
+    <i class="fa fa-circle-o"></i> Kenaikan Kelas
+  </a>
+  <a href="{{ route('student.pass') }}" class="miba-nav-item {{ request()->routeIs('student.pass') ? 'active' : '' }}">
+    <i class="fa fa-circle-o"></i> Kelulusan
+  </a>
+  @endif
+</div>
 
-          @if(($app_level ?? '') == 'senior')
-          <li class="{{ request()->routeIs('student.majors') ? 'active' : '' }}">
-            <a href="{{ route('student.majors') }}"><i class="fa fa-circle-o"></i> Unit Pendidikan</a>
-          </li>
-          @endif
+<div class="miba-nav-section">Laporan</div>
+<button class="miba-nav-item" data-sub="sub-laporan" aria-expanded="false">
+  <i class="fa fa-bar-chart"></i> Laporan
+  <i class="fa fa-chevron-down chevron"></i>
+</button>
+<div class="miba-nav-sub" id="sub-laporan">
+  <a href="{{ route('report.index') }}" class="miba-nav-item {{ request()->routeIs('report.index') ? 'active' : '' }}">
+    <i class="fa fa-circle-o"></i> Total Keuangan
+  </a>
+  <a href="{{ route('report.bill') }}" class="miba-nav-item {{ request()->routeIs('report.bill') ? 'active' : '' }}">
+    <i class="fa fa-circle-o"></i> Per-Kelas
+  </a>
+</div>
 
-          <li class="{{ request()->routeIs('student.index') || request()->routeIs('student.show') || request()->routeIs('student.edit') ? 'active' : '' }}">
-            <a href="{{ route('student.index') }}"><i class="fa fa-circle-o"></i> Peserta Didik</a>
-          </li>
+<div class="miba-nav-section">Sistem</div>
+<a href="{{ route('users.index') }}" class="miba-nav-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
+  <i class="fa fa-users"></i> Pengguna
+</a>
+<a href="{{ route('maintenance.index') }}" class="miba-nav-item {{ request()->routeIs('maintenance.*') ? 'active' : '' }}">
+  <i class="fa fa-database"></i> Backup Database
+</a>
+@endif
 
-          @if(($app_level ?? '') == 'senior')
-          <li class="{{ request()->routeIs('student.upgrade') ? 'active' : '' }}">
-            <a href="{{ route('student.upgrade') }}"><i class="fa fa-circle-o"></i> Kenaikan Kelas</a>
-          </li>
-          <li class="{{ request()->routeIs('student.pass') ? 'active' : '' }}">
-            <a href="{{ route('student.pass') }}"><i class="fa fa-circle-o"></i> Kelulusan</a>
-          </li>
-          @endif
-        </ul>
-      </li>
+<div class="miba-nav-section">Umum</div>
+<a href="{{ route('information.index') }}" class="miba-nav-item {{ request()->routeIs('information.*') ? 'active' : '' }}">
+  <i class="fa fa-newspaper-o"></i> Informasi
+</a>
+<a href="{{ route('holiday.index') }}" class="miba-nav-item {{ request()->routeIs('holiday.*') ? 'active' : '' }}">
+  <i class="fa fa-calendar"></i> Hari Libur
+</a>
+<a href="{{ route('logs.index') }}" class="miba-nav-item {{ request()->routeIs('logs.*') ? 'active' : '' }}">
+  <i class="fa fa-history"></i> Log Aktivitas
+</a>
 
-      {{-- Laporan (untuk SUPERUSER) --}}
-      <li class="treeview {{ request()->routeIs('report.*') ? 'active' : '' }}">
-        <a href="#">
-          <i class="fa fa-file-text"></i><span>Laporan</span>
-          <span class="pull-right-container"><i class="fa fa-angle-left pull-right"></i></span>
-        </a>
-        <ul class="treeview-menu">
-          <li class="{{ request()->routeIs('report.index') ? 'active' : '' }}">
-            <a href="{{ route('report.index') }}"><i class="fa fa-circle-o"></i> Laporan Total Keuangan</a>
-          </li>
-          <li class="{{ request()->routeIs('report.bill') ? 'active' : '' }}">
-            <a href="{{ route('report.bill') }}"><i class="fa fa-circle-o"></i> Laporan Per-Kelas</a>
-          </li>
-        </ul>
-      </li>
-
-      {{-- Pengguna Aplikasi --}}
-      <li class="{{ request()->routeIs('users.*') ? 'active' : '' }}">
-        <a href="{{ route('users.index') }}">
-          <i class="fa fa-user"></i><span>Pengguna Aplikasi</span>
-        </a>
-      </li>
-
-      {{-- Backup Database --}}
-      <li class="{{ request()->routeIs('maintenance.*') ? 'active' : '' }}">
-        <a href="{{ route('maintenance.index') }}">
-          <i class="fa fa-database"></i><span>Backup Database</span>
-        </a>
-      </li>
-      @endif
-
-      {{-- Modul tambahan: tetap ditampilkan untuk semua role --}}
-      <li class="{{ request()->routeIs('information.*') ? 'active' : '' }}">
-        <a href="{{ route('information.index') }}">
-          <i class="fa fa-newspaper-o"></i><span>Informasi</span>
-        </a>
-      </li>
-
-      <li class="{{ request()->routeIs('holiday.*') ? 'active' : '' }}">
-        <a href="{{ route('holiday.index') }}">
-          <i class="fa fa-sun-o"></i><span>Hari Libur</span>
-        </a>
-      </li>
-
-      <li class="{{ request()->routeIs('logs.*') ? 'active' : '' }}">
-        <a href="{{ route('logs.index') }}">
-          <i class="fa fa-history"></i><span>Log Aktivitas</span>
-        </a>
-      </li>
-    </ul>
-  </section>
-</aside>
+<div style="height:16px"></div>
