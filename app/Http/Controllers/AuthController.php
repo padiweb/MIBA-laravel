@@ -9,7 +9,14 @@ use App\Models\Setting;
 class AuthController extends Controller {
 
     public function index() {
-        return redirect()->route('login');
+        // Halaman utama = login unified (siswa + admin)
+        if (session('user_id'))      return redirect()->route('dashboard');
+        if (session('student_id'))   return redirect()->route('portal.dashboard');
+        $setting = [
+            'school' => Setting::getValue(1),
+            'logo'   => Setting::getValue(6),
+        ];
+        return view('auth.login-unified', compact('setting'));
     }
 
     public function login() {
