@@ -42,6 +42,13 @@
           <button type="submit" class="btn btn-primary btn-block btn-flat">Masuk</button>
         </div>
       </div>
+      <div class="row" style="margin-top:15px">
+        <div class="col-xs-12 text-center">
+          <a href="{{ route('portal.login') }}" class="text-muted">
+            <i class="fa fa-graduation-cap"></i> Login sebagai Siswa/Santri
+          </a>
+        </div>
+      </div>
     </form>
   </div>
 </div>
