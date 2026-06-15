@@ -1,45 +1,38 @@
 @extends('layouts.app')
 @section('content')
-<div class="box box-primary">
-  <div class="box-header with-border">
-    <h3 class="box-title">Informasi</h3>
-    <div class="box-tools pull-right">
-      <a href="{{ route('information.create') }}" class="btn btn-primary btn-sm">
-        <i class="fa fa-plus"></i> Tambah
-      </a>
-    </div>
+<div class="miba-card">
+  <div class="miba-card-header">
+    <div class="miba-card-title"><i class="fa fa-newspaper-o"></i> Informasi</div>
+    <a href="{{ route('information.create') }}" class="btn-miba btn-miba-sm btn-primary-miba"><i class="fa fa-plus"></i> Buat Informasi</a>
   </div>
-  <div class="box-body">
-    <table class="table table-bordered table-striped">
+  <div class="miba-table-wrap">
+    <table class="miba-table">
       <thead><tr><th>No</th><th>Judul</th><th>Status</th><th>Tanggal</th><th>Aksi</th></tr></thead>
       <tbody>
         @forelse($informations as $i => $info)
         <tr>
-          <td>{{ $informations->firstItem() + $i }}</td>
-          <td>{{ $info->information_title }}</td>
+          <td style="color:var(--text-muted)">{{ $informations->firstItem()+$i }}</td>
           <td>
-            <span class="label label-{{ $info->information_publish ? 'success' : 'default' }}">
-              {{ $info->information_publish ? 'Publish' : 'Draft' }}
-            </span>
+            <div style="font-weight:600">{{ $info->information_title }}</div>
+            <div style="font-size:12px;color:var(--text-muted)">{{ \Illuminate\Support\Str::limit(strip_tags($info->information_desc),80) }}</div>
           </td>
-          <td>{{ \Carbon\Carbon::parse($info->information_input_date)->format('d/m/Y') }}</td>
+          <td><span class="badge-miba {{ $info->information_publish?'badge-success':'badge-muted' }}">{{ $info->information_publish?'Dipublikasi':'Draft' }}</span></td>
+          <td style="font-size:12px;color:var(--text-muted)">{{ \Carbon\Carbon::parse($info->information_input_date)->locale('id')->isoFormat('D MMM Y') }}</td>
           <td>
-            <a href="{{ route('information.edit', $info->information_id) }}" class="btn btn-warning btn-xs">
-              <i class="fa fa-edit"></i>
-            </a>
-            <form action="{{ route('information.destroy', $info->information_id) }}" method="POST" style="display:inline"
-                  onsubmit="return confirm('Hapus informasi ini?')">
-              @csrf @method('DELETE')
-              <button class="btn btn-danger btn-xs"><i class="fa fa-trash"></i></button>
-            </form>
+            <div style="display:flex;gap:4px">
+              <a href="{{ route('information.edit',$info->information_id) }}" class="btn-miba btn-miba-xs btn-accent-miba"><i class="fa fa-edit"></i></a>
+              <form method="POST" action="{{ route('information.destroy',$info->information_id) }}" onsubmit="return confirm('Hapus?')">@csrf @method('DELETE')
+                <button class="btn-miba btn-miba-xs btn-danger-miba"><i class="fa fa-trash"></i></button>
+              </form>
+            </div>
           </td>
         </tr>
         @empty
-        <tr><td colspan="5" class="text-center">Tidak ada data</td></tr>
+        <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted)">Belum ada informasi</td></tr>
         @endforelse
       </tbody>
     </table>
-    <div class="text-center">{{ $informations->links() }}</div>
   </div>
+  <div style="padding:12px 16px">{{ $informations->links() }}</div>
 </div>
 @endsection

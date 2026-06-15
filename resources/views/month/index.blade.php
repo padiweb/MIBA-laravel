@@ -1,91 +1,54 @@
 @extends('layouts.app')
 @section('content')
-<div class="row">
-  <div class="col-md-4">
-    <div class="box box-primary">
-      <div class="box-header with-border"><h3 class="box-title">Tambah Bulan</h3></div>
-      <div class="box-body">
-        @if($errors->any())
-          <div class="alert alert-danger"><ul class="mb-0">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul></div>
-        @endif
-        <form method="POST" action="{{ route('month.store') }}">
-          @csrf
-          <div class="form-group">
-            <label>Nama Bulan</label>
-            <input type="text" name="month_name" class="form-control" placeholder="Contoh: Juli" required>
-          </div>
-          <button class="btn btn-primary btn-block"><i class="fa fa-save"></i> Simpan</button>
-        </form>
-      </div>
+<div style="display:grid;grid-template-columns:300px 1fr;gap:16px;align-items:start">
+  <div class="miba-card">
+    <div class="miba-card-header"><div class="miba-card-title"><i class="fa fa-plus"></i> Tambah Bulan</div></div>
+    <div class="miba-card-body">
+      <form method="POST" action="{{ route('month.store') }}">@csrf
+        <div class="miba-form-group"><label class="miba-label">Nama Bulan <span class="req">*</span></label><input type="text" name="month_name" class="miba-input" required placeholder="Contoh: Juli"></div>
+        <button class="btn-miba btn-primary-miba" style="width:100%;justify-content:center"><i class="fa fa-save"></i> Simpan</button>
+      </form>
     </div>
   </div>
-  <div class="col-md-8">
-    <div class="box box-success">
-      <div class="box-header with-border">
-        <h3 class="box-title">Daftar Bulan</h3>
-        <div class="box-tools pull-right">
-          <form method="GET" class="form-inline">
-            <input type="text" name="n" class="form-control input-sm" placeholder="Cari nama bulan..." value="{{ request('n') }}">
-            <button class="btn btn-default btn-sm"><i class="fa fa-search"></i></button>
-          </form>
-        </div>
-      </div>
-      <div class="box-body table-responsive">
-        <table class="table table-hover table-striped table-bordered">
-          <thead><tr><th>No</th><th>Nama Bulan</th><th>ID</th><th>Aksi</th></tr></thead>
-          <tbody>
-            @forelse($months as $i => $m)
-            <tr>
-              <td>{{ $months->firstItem() + $i }}</td>
-              <td>{{ $m->month_name }}</td>
-              <td>{{ $m->month_id }}</td>
-              <td>
-                <button class="btn btn-warning btn-xs" onclick="editMonth({{ $m->month_id }}, '{{ $m->month_name }}')">
-                  <i class="fa fa-edit"></i> Edit
-                </button>
-                <form action="{{ route('month.destroy', $m->month_id) }}" method="POST" style="display:inline"
-                      onsubmit="return confirm('Hapus bulan {{ $m->month_name }}?')">
-                  @csrf @method('DELETE')
-                  <button class="btn btn-danger btn-xs"><i class="fa fa-trash"></i> Hapus</button>
+  <div class="miba-card">
+    <div class="miba-card-header"><div class="miba-card-title"><i class="fa fa-calendar-o"></i> Daftar Bulan</div></div>
+    <div class="miba-table-wrap">
+      <table class="miba-table">
+        <thead><tr><th>No</th><th>Bulan</th><th>Aksi</th></tr></thead>
+        <tbody>
+          @forelse($months as $i => $m)
+          <tr>
+            <td style="color:var(--text-muted)">{{ $i+1 }}</td>
+            <td style="font-weight:600">{{ $m->month_name }}</td>
+            <td>
+              <div style="display:flex;gap:4px">
+                <button class="btn-miba btn-miba-xs btn-accent-miba" onclick="editMonth({{ $m->month_id }},'{{ addslashes($m->month_name) }}')"><i class="fa fa-edit"></i></button>
+                <form method="POST" action="{{ route('month.destroy',$m->month_id) }}" onsubmit="return confirm('Hapus bulan ini?')">@csrf @method('DELETE')
+                  <button class="btn-miba btn-miba-xs btn-danger-miba"><i class="fa fa-trash"></i></button>
                 </form>
-              </td>
-            </tr>
-            @empty
-            <tr><td colspan="4" class="text-center">Tidak ada data</td></tr>
-            @endforelse
-          </tbody>
-        </table>
-        <div class="text-center">{{ $months->links() }}</div>
-      </div>
+              </div>
+            </td>
+          </tr>
+          @empty
+          <tr><td colspan="3" style="text-align:center;padding:24px;color:var(--text-muted)">Belum ada data bulan</td></tr>
+          @endforelse
+        </tbody>
+      </table>
     </div>
   </div>
 </div>
-
-<div class="modal fade" id="editModal">
-  <div class="modal-dialog"><div class="modal-content">
-    <form method="POST" id="editForm">
-      @csrf @method('PUT')
-      <div class="modal-header"><h4 class="modal-title">Sunting Bulan</h4></div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label>Nama Bulan</label>
-          <input type="text" name="month_name" id="edit_name" class="form-control" required>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="submit" class="btn btn-primary">Simpan</button>
-        <button type="button" class="btn btn-default" data-dismiss="modal">Batal</button>
-      </div>
+<div class="modal fade" id="editMonth">
+  <div class="modal-dialog"><div class="modal-content" style="border-radius:12px;overflow:hidden">
+    <form method="POST" id="editMonthForm" action="">@csrf @method('PUT')
+      <div class="modal-header" style="border-bottom:1px solid var(--border)"><h4 class="modal-title">Edit Bulan</h4><button class="close" data-dismiss="modal">&times;</button></div>
+      <div class="modal-body"><div class="miba-form-group"><label class="miba-label">Nama Bulan</label><input type="text" name="month_name" id="editMonthName" class="miba-input" required></div></div>
+      <div class="modal-footer"><button type="submit" class="btn-miba btn-primary-miba">Update</button><button type="button" class="btn-miba btn-ghost-miba" data-dismiss="modal">Batal</button></div>
     </form>
   </div></div>
 </div>
+@endsection
 @push('scripts')
 <script>
-function editMonth(id, name) {
-  $('#edit_name').val(name);
-  $('#editForm').attr('action', '/manage/month/' + id);
-  $('#editModal').modal('show');
-}
+function editMonth(id,name){$('#editMonthForm').attr('action','/manage/month/'+id);$('#editMonthName').val(name);$('#editMonth').modal('show');}
 </script>
 @endpush
-@endsection

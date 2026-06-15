@@ -1,35 +1,28 @@
 @extends('layouts.app')
 @section('content')
-<div class="box box-success">
-  <div class="box-header with-border"><h3 class="box-title">Import Data Siswa</h3></div>
-  <div class="box-body table-responsive">
-    @if(session('failed'))
-      <div class="alert alert-danger">{{ session('failed') }}</div>
-    @endif
-    <h4>Petunjuk Singkat</h4>
-    <p>
-      Penginputan data Siswa bisa dilakukan dengan mengcopy data dari file Ms. Excel.
-      Format file excel harus sesuai kebutuhan aplikasi. Silahkan download formatnya
-      <a href="{{ route('student.downloadTemplate') }}"><span class="label label-success">Disini</span></a>
-      <br><br>
-      <strong>CATATAN :</strong>
-      <ol>
-        <li>Pengisian jenis data <strong>TANGGAL</strong> diisi dengan format <strong>YYYY-MM-DD</strong>, contoh <strong>2017-12-21</strong>.<br>
-        Cara ubah: blok semua kolom tanggal di Excel, pilih Format Cell &rarr; Date dengan format tahun di depan.</li>
-        <li>Kolom <strong>ID Kelas</strong> harus sesuai dengan ID kelas yang sudah ada di menu Akademik &rarr; Kelas.</li>
-        @if(($app_level ?? '')=='senior')
-        <li>Kolom <strong>ID Unit Pendidikan</strong> harus sesuai dengan ID unit pada menu Akademik &rarr; Unit Pendidikan.</li>
-        @endif
-      </ol>
-    </p>
-    <hr>
-    <form method="POST" action="{{ route('student.importStore') }}">
-      @csrf
-      <div class="form-group">
-        <textarea placeholder="Copy data yang akan dimasukan dari file excel, dan paste disini" rows="8" class="form-control" name="rows"></textarea>
+<div class="miba-card" style="max-width:700px">
+  <div class="miba-card-header">
+    <div class="miba-card-title"><i class="fa fa-upload"></i> Import Data Siswa</div>
+    <a href="{{ route('student.index') }}" class="btn-miba btn-miba-sm btn-ghost-miba"><i class="fa fa-arrow-left"></i> Kembali</a>
+  </div>
+  <div class="miba-card-body">
+    <div class="miba-alert miba-alert-info">
+      <i class="fa fa-info-circle"></i>
+      <div>
+        <strong>Petunjuk:</strong> Copy data dari Ms. Excel dan paste ke kotak di bawah.<br>
+        Download template: <a href="{{ route('student.downloadTemplate') }}" style="color:var(--primary);font-weight:600">Template Excel Data Siswa</a><br>
+        <small>Format tanggal: YYYY-MM-DD. Kolom ID Kelas sesuai dengan ID di menu Kelas.</small>
       </div>
-      <button type="submit" class="btn btn-success btn-sm btn-flat"><i class="fa fa-upload"></i> Import Data</button>
-      <a href="{{ route('student.index') }}" class="btn btn-primary btn-sm btn-flat"><i class="fa fa-repeat"></i> Kembali</a>
+    </div>
+    <form method="POST" action="{{ route('student.importStore') }}">@csrf
+      <div class="miba-form-group">
+        <label class="miba-label">Paste Data dari Excel</label>
+        <textarea name="rows" class="miba-textarea" rows="10" placeholder="Copy data dari Excel dan paste di sini..."></textarea>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-miba btn-primary-miba"><i class="fa fa-upload"></i> Import Data</button>
+        <a href="{{ route('student.index') }}" class="btn-miba btn-ghost-miba">Batal</a>
+      </div>
     </form>
   </div>
 </div>

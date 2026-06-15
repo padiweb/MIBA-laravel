@@ -13,6 +13,7 @@ use App\Models\Setting;
 use App\Models\Debit;
 use App\Models\Kredit;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Helpers\ExcelExport;
 
 class ReportController extends Controller {
 
@@ -51,7 +52,7 @@ class ReportController extends Controller {
         ));
     }
 
-    // Export Laporan Total Keuangan ke CSV (pengganti PHPExcel report())
+    // Export Laporan Total Keuangan → Excel (.xlsx)
     public function exportKeuangan(Request $request) {
         $ds = $request->ds;
         $de = $request->de;
@@ -59,7 +60,7 @@ class ReportController extends Controller {
         $bulanQuery = Bulan::with(['student.class', 'payment.pos', 'payment.period', 'month'])
             ->where('bulan_status', 1);
         $bebasQuery = \App\Models\BebasPay::with(['bebas.student.class', 'bebas.payment.pos', 'bebas.payment.period']);
-        $debitQuery = Debit::query();
+        $debitQuery  = Debit::query();
         $kreditQuery = Kredit::query();
 
         if ($ds && $de) {
@@ -69,66 +70,56 @@ class ReportController extends Controller {
             $kreditQuery->whereBetween('kredit_date', [$ds, $de]);
         }
 
-        $bulans = $bulanQuery->get();
+        $bulans    = $bulanQuery->get();
         $bebasPays = $bebasQuery->get();
-        $debits = $debitQuery->get();
-        $kredits = $kreditQuery->get();
-        $schoolName = Setting::getValue(1);
+        $debits    = $debitQuery->get();
+        $kredits   = $kreditQuery->get();
+        $school    = Setting::getValue(1);
+        $periode   = ($ds && $de)
+            ? \Carbon\Carbon::parse($ds)->locale('id')->isoFormat('D MMMM Y') . ' s/d ' . \Carbon\Carbon::parse($de)->locale('id')->isoFormat('D MMMM Y')
+            : 'Semua Periode';
 
-        $filename = 'LAPORAN_KEUANGAN_' . date('dmY') . '.csv';
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => "attachment; filename=\"$filename\"",
-        ];
+        $headers = ['NO','PEMBAYARAN','NAMA SISWA','KELAS','TANGGAL','PENERIMAAN','PENGELUARAN','KETERANGAN'];
+        $data    = [];
+        $no      = 1;
 
-        $callback = function() use ($bulans, $bebasPays, $debits, $kredits, $schoolName, $ds, $de) {
-            $file = fopen('php://output', 'w');
-            fputcsv($file, ['LAPORAN KEUANGAN']);
-            fputcsv($file, [$schoolName]);
-            if ($ds && $de) {
-                fputcsv($file, ['Tanggal Laporan: ' . \Carbon\Carbon::parse($ds)->locale('id')->isoFormat('D MMMM Y') . ' s/d ' . \Carbon\Carbon::parse($de)->locale('id')->isoFormat('D MMMM Y')]);
-            }
-            fputcsv($file, ['Tanggal Unduh: ' . \Carbon\Carbon::now()->locale('id')->isoFormat('D MMMM Y, HH:mm'), 'Pengunduh: ' . session('user_fullname')]);
-            fputcsv($file, []);
-            fputcsv($file, ['NO','PEMBAYARAN','NAMA SISWA','KELAS','TANGGAL','PENERIMAAN','PENGELUARAN','KETERANGAN']);
+        foreach ($bulans as $b) {
+            $data[] = [
+                $no++,
+                ($b->payment->pos->pos_name ?? '') . ' - T.P ' . ($b->payment->period->period_start ?? '') . '/' . ($b->payment->period->period_end ?? '') . ' (' . ($b->month->month_name ?? '') . ')',
+                $b->student->student_full_name ?? '',
+                $b->student->class->class_name ?? '',
+                $b->bulan_date_pay,
+                $b->bulan_bill,
+                0,
+                $b->bulan_pay_desc ?? '',
+            ];
+        }
+        foreach ($bebasPays as $bp) {
+            $bebas = $bp->bebas;
+            $data[] = [
+                $no++,
+                ($bebas->payment->pos->pos_name ?? '') . ' - T.P ' . ($bebas->payment->period->period_start ?? '') . '/' . ($bebas->payment->period->period_end ?? ''),
+                $bebas->student->student_full_name ?? '',
+                $bebas->student->class->class_name ?? '',
+                $bp->bebas_pay_input_date,
+                $bp->bebas_pay_bill,
+                0,
+                $bp->bebas_pay_desc ?? '',
+            ];
+        }
+        foreach ($debits as $d) {
+            $data[] = [$no++, 'Pemasukan Lain-lain', '', '', $d->debit_date, $d->debit_value, 0, $d->debit_desc ?? ''];
+        }
+        foreach ($kredits as $k) {
+            $data[] = [$no++, 'Pengeluaran', '', '', $k->kredit_date, 0, $k->kredit_value, $k->kredit_desc ?? ''];
+        }
 
-            $no = 1;
-            foreach ($bulans as $b) {
-                fputcsv($file, [
-                    $no++,
-                    ($b->payment->pos->pos_name ?? '') . ' - T.P ' . ($b->payment->period->period_start ?? '') . '/' . ($b->payment->period->period_end ?? '') . ' - (' . ($b->month->month_name ?? '') . ')',
-                    $b->student->student_full_name ?? '',
-                    $b->student->class->class_name ?? '',
-                    $b->bulan_date_pay,
-                    $b->bulan_bill,
-                    '-',
-                    $b->bulan_pay_desc,
-                ]);
-            }
-            foreach ($bebasPays as $bp) {
-                $bebas = $bp->bebas;
-                fputcsv($file, [
-                    $no++,
-                    ($bebas->payment->pos->pos_name ?? '') . ' - T.P ' . ($bebas->payment->period->period_start ?? '') . '/' . ($bebas->payment->period->period_end ?? ''),
-                    $bebas->student->student_full_name ?? '',
-                    $bebas->student->class->class_name ?? '',
-                    $bp->bebas_pay_input_date,
-                    $bp->bebas_pay_bill,
-                    '-',
-                    $bp->bebas_pay_desc,
-                ]);
-            }
-            foreach ($debits as $d) {
-                fputcsv($file, [$no++, 'Pemasukan Lain', '-', '-', $d->debit_date, $d->debit_value, '-', $d->debit_desc]);
-            }
-            foreach ($kredits as $k) {
-                fputcsv($file, [$no++, 'Pengeluaran', '-', '-', $k->kredit_date, '-', $k->kredit_value, $k->kredit_desc]);
-            }
+        $filename = 'Laporan_Keuangan_' . date('Y-m-d') . '.xls';
 
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
+        return (new \App\Helpers\ExcelExport('Laporan Keuangan'))
+            ->addSheet($school . ' — ' . $periode, $headers, $data, ['F' => 'number', 'G' => 'number'])
+            ->download($filename);
     }
 
     public function cetak(Request $request) {
@@ -260,48 +251,43 @@ class ReportController extends Controller {
         elseif ($request->filled('k')) $studentQuery->where('majors_majors_id', $request->k);
         $students = $studentQuery->orderBy('class_class_id')->orderBy('student_full_name')->get();
 
-        $filename = 'laporan-per-kelas-' . date('Y-m-d') . '.csv';
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => "attachment; filename=\"$filename\"",
-        ];
+        // Build header & data
+        $hdr = ['No', 'Kelas', 'NIS', 'Nama'];
+        foreach ($sortedMonths as $m) $hdr[] = $m->month_name;
+        $hdr[] = 'Total Dibayar';
+        $hdr[] = 'Kekurangan';
 
-        $callback = function() use ($students, $sortedMonths, $request) {
-            $file = fopen('php://output', 'w');
-            $header = ['No', 'Kelas', 'Nama'];
-            foreach ($sortedMonths as $m) $header[] = $m->month_name;
-            $header[] = 'Total Dibayar';
-            $header[] = 'Kekurangan';
-            fputcsv($file, $header);
+        $data = [];
+        $no   = 1;
+        foreach ($students as $student) {
+            $bulans = Bulan::where('student_student_id', $student->student_id)
+                ->whereHas('payment', fn($q) => $q->where('period_period_id', $request->p)->where('payment_type','BULAN'))
+                ->get();
 
-            $no = 1;
-            foreach ($students as $student) {
-                $bulans = Bulan::where('student_student_id', $student->student_id)
-                    ->whereHas('payment', fn($q) => $q->where('period_period_id', $request->p)->where('payment_type','BULAN'))
-                    ->get();
-
-                $row = [$no++, $student->class->class_name ?? '-', $student->student_full_name];
-                $totalDibayar = 0; $totalTagihan = 0;
-                foreach ($sortedMonths as $m) {
-                    $b = $bulans->firstWhere('month_month_id', $m->month_id);
-                    if ($b) {
-                        $totalTagihan += $b->bulan_bill;
-                        if ($b->bulan_status) $totalDibayar += $b->bulan_bill;
-                        $row[] = $b->bulan_status ? 'LUNAS' : number_format($b->bulan_bill,0,',','.');
-                    } else {
-                        $row[] = '-';
-                    }
+            $row = [$no++, $student->class->class_name ?? '-', $student->student_nis, $student->student_full_name];
+            $totalDibayar = 0; $totalTagihan = 0;
+            foreach ($sortedMonths as $m) {
+                $b = $bulans->firstWhere('month_month_id', $m->month_id);
+                if ($b) {
+                    $totalTagihan += $b->bulan_bill;
+                    if ($b->bulan_status) $totalDibayar += $b->bulan_bill;
+                    $row[] = $b->bulan_status ? 'LUNAS' : $b->bulan_bill;
+                } else {
+                    $row[] = '';
                 }
-                $row[] = number_format($totalDibayar,0,',','.');
-                $row[] = number_format($totalTagihan-$totalDibayar,0,',','.');
-                fputcsv($file, $row);
             }
-            fclose($file);
-        };
+            $row[] = $totalDibayar;
+            $row[] = $totalTagihan - $totalDibayar;
+            $data[] = $row;
+        }
 
-        return response()->stream($callback, 200, $headers);
+        $period = \App\Models\Period::find($request->p);
+        $sheetName = 'Lap Per-Kelas ' . ($period ? $period->period_start.'/'.$period->period_end : '');
+
+        return (new \App\Helpers\ExcelExport('Laporan Per-Kelas'))
+            ->addSheet($sheetName, $hdr, $data)
+            ->download('Laporan_Per_Kelas_' . date('Y-m-d') . '.xls');
     }
-}
 
     // Export Rekapitulasi Pembayaran Per-Kelas ke CSV (pengganti PHPExcel report_bill_detail)
     public function billDetailExport(Request $request) {
@@ -320,61 +306,55 @@ class ReportController extends Controller {
         $period   = Period::find($periodId);
         $school   = Setting::getValue(1);
 
-        $filename = 'Rekapitulasi_Pembayaran_'.date('Ymd').'.csv';
-        $headers  = ['Content-Type'=>'text/csv','Content-Disposition'=>"attachment; filename=\"$filename\""];
+        $headers = ['NO','NIS','NAMA','KELAS','JENIS PEMBAYARAN','TAGIHAN','DIBAYAR','SISA','STATUS'];
+        $data    = [];
+        $no      = 1;
 
-        $callback = function() use ($students, $period, $periodId, $school) {
-            $file = fopen('php://output', 'w');
-            fputcsv($file, ['REKAPITULASI PEMBAYARAN SISWA']);
-            fputcsv($file, [$school]);
-            fputcsv($file, ['Tahun Pelajaran: '.($period?$period->period_start.'/'.$period->period_end:'Semua')]);
-            fputcsv($file, ['Tanggal Unduh: '.\Carbon\Carbon::now()->locale('id')->isoFormat('D MMMM Y, HH:mm')]);
-            fputcsv($file, []);
-            fputcsv($file, ['NO','NIS','NAMA','KELAS','JENIS PEMBAYARAN','TAGIHAN','DIBAYAR','SISA','STATUS']);
+        foreach ($students as $student) {
+            $bulans = \App\Models\Bulan::with(['payment.pos','month'])
+                ->where('student_student_id', $student->student_id)
+                ->when($periodId, fn($q) => $q->whereHas('payment', fn($q2) => $q2->where('period_period_id', $periodId)))
+                ->get();
 
-            $no = 1;
-            foreach ($students as $student) {
-                $bulans = \App\Models\Bulan::with(['payment.pos','month'])
-                    ->where('student_student_id', $student->student_id)
-                    ->when($periodId, fn($q) => $q->whereHas('payment', fn($q2) => $q2->where('period_period_id', $periodId)))
-                    ->get();
+            $bebases = \App\Models\Bebas::with(['payment.pos'])
+                ->where('student_student_id', $student->student_id)
+                ->when($periodId, fn($q) => $q->whereHas('payment', fn($q2) => $q2->where('period_period_id', $periodId)))
+                ->get();
 
-                $bebases = \App\Models\Bebas::with(['payment.pos'])
-                    ->where('student_student_id', $student->student_id)
-                    ->when($periodId, fn($q) => $q->whereHas('payment', fn($q2) => $q2->where('period_period_id', $periodId)))
-                    ->get();
-
-                foreach ($bulans as $b) {
-                    fputcsv($file, [
-                        $no++,
-                        $student->student_nis,
-                        $student->student_full_name,
-                        $student->class->class_name ?? '',
-                        ($b->payment->pos->pos_name ?? '') . ' - ' . ($b->month->month_name ?? ''),
-                        $b->bulan_bill,
-                        $b->bulan_status ? $b->bulan_bill : 0,
-                        $b->bulan_status ? 0 : $b->bulan_bill,
-                        $b->bulan_status ? 'Lunas' : 'Belum Lunas',
-                    ]);
-                }
-
-                foreach ($bebases as $b) {
-                    $sisa = $b->bebas_bill - $b->bebas_total_pay;
-                    fputcsv($file, [
-                        $no++,
-                        $student->student_nis,
-                        $student->student_full_name,
-                        $student->class->class_name ?? '',
-                        $b->payment->pos->pos_name ?? '',
-                        $b->bebas_bill,
-                        $b->bebas_total_pay,
-                        $sisa,
-                        $sisa <= 0 ? 'Lunas' : 'Belum Lunas',
-                    ]);
-                }
+            foreach ($bulans as $b) {
+                $data[] = [
+                    $no++,
+                    $student->student_nis,
+                    $student->student_full_name,
+                    $student->class->class_name ?? '',
+                    ($b->payment->pos->pos_name ?? '') . ' - ' . ($b->month->month_name ?? ''),
+                    $b->bulan_bill,
+                    $b->bulan_status ? $b->bulan_bill : 0,
+                    $b->bulan_status ? 0 : $b->bulan_bill,
+                    $b->bulan_status ? 'Lunas' : 'Belum Lunas',
+                ];
             }
-            fclose($file);
-        };
+            foreach ($bebases as $b) {
+                $sisa = $b->bebas_bill - $b->bebas_total_pay;
+                $data[] = [
+                    $no++,
+                    $student->student_nis,
+                    $student->student_full_name,
+                    $student->class->class_name ?? '',
+                    $b->payment->pos->pos_name ?? '',
+                    $b->bebas_bill,
+                    $b->bebas_total_pay,
+                    $sisa,
+                    $sisa <= 0 ? 'Lunas' : 'Belum Lunas',
+                ];
+            }
+        }
 
-        return response()->stream($callback, 200, $headers);
+        $sheetName = 'Rekapitulasi ' . ($period ? $period->period_start.'/'.$period->period_end : 'Semua');
+
+        return (new \App\Helpers\ExcelExport('Rekapitulasi Pembayaran'))
+            ->addSheet($sheetName, $headers, $data, ['F'=>'number','G'=>'number','H'=>'number'])
+            ->download('Rekapitulasi_Pembayaran_' . date('Y-m-d') . '.xls');
     }
+
+}

@@ -1,26 +1,30 @@
 @extends('layouts.app')
 @section('content')
-<div class="box box-primary">
-  <div class="box-header with-border"><h3 class="box-title">Log Aktivitas</h3></div>
-  <div class="box-body">
-    <table class="table table-bordered table-striped">
-      <thead><tr><th>No</th><th>Waktu</th><th>Aksi</th><th>Modul</th><th>Info</th><th>Pengguna</th></tr></thead>
+<div class="miba-card">
+  <div class="miba-card-header">
+    <div class="miba-card-title"><i class="fa fa-history"></i> Log Aktivitas</div>
+  </div>
+  <div class="miba-table-wrap">
+    <table class="miba-table">
+      <thead><tr><th>Waktu</th><th>Pengguna</th><th>Aksi</th><th>Modul</th><th>Keterangan</th></tr></thead>
       <tbody>
-        @forelse($logs as $i => $l)
+        @forelse($logs as $log)
         <tr>
-          <td>{{ $logs->firstItem() + $i }}</td>
-          <td>{{ \Carbon\Carbon::parse($l->log_date)->format('d/m/Y H:i') }}</td>
-          <td><span class="label label-{{ $l->log_action=='DELETE'?'danger':($l->log_action=='ADD'?'success':'warning') }}">{{ $l->log_action }}</span></td>
-          <td>{{ $l->log_module }}</td>
-          <td>{{ Str::limit($l->log_info, 60) }}</td>
-          <td>{{ $l->user->user_full_name ?? '-' }}</td>
+          <td style="white-space:nowrap;color:var(--text-muted);font-size:12px">{{ \Carbon\Carbon::parse($log->log_date)->format('d/m/Y H:i') }}</td>
+          <td style="font-weight:500">{{ $log->user->user_full_name??'-' }}</td>
+          <td>
+            @php $c=['ADD'=>'badge-success','DELETE'=>'badge-danger','UPDATE'=>'badge-info','BACKUP'=>'badge-warning','PAY'=>'badge-success'][$log->log_action]??'badge-muted'; @endphp
+            <span class="badge-miba {{ $c }}">{{ $log->log_action }}</span>
+          </td>
+          <td style="font-size:13px">{{ $log->log_module }}</td>
+          <td style="font-size:12px;color:var(--text-muted)">{{ $log->log_info }}</td>
         </tr>
         @empty
-        <tr><td colspan="6" class="text-center">Tidak ada data</td></tr>
+        <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted)">Belum ada log aktivitas</td></tr>
         @endforelse
       </tbody>
     </table>
-    <div class="text-center">{{ $logs->links() }}</div>
   </div>
+  <div style="padding:12px 16px">{{ $logs->links() }}</div>
 </div>
 @endsection

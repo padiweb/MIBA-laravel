@@ -1,54 +1,38 @@
 @extends('layouts.app')
 @section('content')
-<div class="row">
-  <div class="col-md-4">
-    <div class="box box-primary">
-      <div class="box-header with-border"><h3 class="box-title">Tambah Hari Libur</h3></div>
-      <div class="box-body">
-        <form method="POST" action="{{ route('holiday.store') }}">
-          @csrf
-          <div class="form-group">
-            <label>Tanggal</label>
-            <div class="input-group date">
-              <input type="text" name="date" class="form-control" required>
-              <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Keterangan</label>
-            <input type="text" name="info" class="form-control" placeholder="Contoh: Hari Raya Idul Fitri" required>
-          </div>
-          <button class="btn btn-primary btn-block"><i class="fa fa-save"></i> Simpan</button>
-        </form>
-      </div>
+<div style="display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start">
+  <div class="miba-card">
+    <div class="miba-card-header"><div class="miba-card-title"><i class="fa fa-calendar-plus-o"></i> Tambah Agenda</div></div>
+    <div class="miba-card-body">
+      <form method="POST" action="{{ route('holiday.store') }}">@csrf
+        <div class="miba-form-group"><label class="miba-label">Tanggal <span class="req">*</span></label><input type="text" name="date" class="miba-input date-pick" required value="{{ date('Y-m-d') }}"></div>
+        <div class="miba-form-group"><label class="miba-label">Keterangan <span class="req">*</span></label><input type="text" name="info" class="miba-input" required placeholder="Nama hari libur / agenda"></div>
+        <button class="btn-miba btn-primary-miba" style="width:100%;justify-content:center"><i class="fa fa-save"></i> Simpan</button>
+      </form>
     </div>
   </div>
-  <div class="col-md-8">
-    <div class="box box-primary">
-      <div class="box-header with-border"><h3 class="box-title">Daftar Hari Libur</h3></div>
-      <div class="box-body">
-        <table class="table table-bordered table-striped">
-          <thead><tr><th>No</th><th>Tanggal</th><th>Keterangan</th><th>Aksi</th></tr></thead>
-          <tbody>
-            @forelse($holidays as $i => $h)
-            <tr>
-              <td>{{ $i+1 }}</td>
-              <td>{{ \Carbon\Carbon::parse($h->date)->format('d/m/Y') }}</td>
-              <td>{{ $h->info }}</td>
-              <td>
-                <form action="{{ route('holiday.destroy', $h->id) }}" method="POST" style="display:inline"
-                      onsubmit="return confirm('Hapus hari libur ini?')">
-                  @csrf @method('DELETE')
-                  <button class="btn btn-danger btn-xs"><i class="fa fa-trash"></i></button>
-                </form>
-              </td>
-            </tr>
-            @empty
-            <tr><td colspan="4" class="text-center">Belum ada data</td></tr>
-            @endforelse
-          </tbody>
-        </table>
-      </div>
+  <div class="miba-card">
+    <div class="miba-card-header"><div class="miba-card-title"><i class="fa fa-calendar"></i> Daftar Hari Libur & Agenda</div></div>
+    <div class="miba-table-wrap">
+      <table class="miba-table">
+        <thead><tr><th>Tanggal</th><th>Hari</th><th>Keterangan</th><th>Aksi</th></tr></thead>
+        <tbody>
+          @forelse($holidays as $h)
+          <tr>
+            <td style="white-space:nowrap;font-weight:600">{{ \Carbon\Carbon::parse($h->date)->locale('id')->isoFormat('D MMMM Y') }}</td>
+            <td style="color:var(--text-muted)">{{ \Carbon\Carbon::parse($h->date)->locale('id')->isoFormat('dddd') }}</td>
+            <td>{{ $h->info }}</td>
+            <td>
+              <form method="POST" action="{{ route('holiday.destroy',$h->id) }}" onsubmit="return confirm('Hapus agenda ini?')">@csrf @method('DELETE')
+                <button class="btn-miba btn-miba-xs btn-danger-miba"><i class="fa fa-trash"></i></button>
+              </form>
+            </td>
+          </tr>
+          @empty
+          <tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text-muted)">Belum ada agenda</td></tr>
+          @endforelse
+        </tbody>
+      </table>
     </div>
   </div>
 </div>

@@ -1,56 +1,47 @@
 @extends('layouts.app')
 @section('content')
-<div class="box box-primary">
-  <div class="box-header with-border"><h3 class="box-title">Pengaturan Sekolah</h3></div>
-  <div class="box-body">
-    @if($errors->any())
-      <div class="alert alert-danger"><ul>@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul></div>
-    @endif
-    <form method="POST" action="{{ route('setting.update') }}" enctype="multipart/form-data">
-      @csrf
-      <div class="row">
-        <div class="col-md-6">
-          <div class="form-group">
-            <label>Nama Sekolah</label>
-            <input type="text" name="school" class="form-control" value="{{ $settings[1]->setting_value ?? '' }}" required>
-          </div>
-          <div class="form-group">
-            <label>Alamat</label>
-            <textarea name="address" class="form-control" rows="2">{{ $settings[2]->setting_value ?? '' }}</textarea>
-          </div>
-          <div class="form-group">
-            <label>No. Telepon</label>
-            <input type="text" name="phone" class="form-control" value="{{ $settings[3]->setting_value ?? '' }}">
-          </div>
-          <div class="form-group">
-            <label>Kecamatan</label>
-            <input type="text" name="district" class="form-control" value="{{ $settings[4]->setting_value ?? '' }}">
-          </div>
+<div class="miba-card" style="max-width:640px">
+  <div class="miba-card-header"><div class="miba-card-title"><i class="fa fa-building"></i> Profil Yayasan / Sekolah</div></div>
+  <div class="miba-card-body">
+    <form method="POST" action="{{ route('setting.update') }}" enctype="multipart/form-data">@csrf
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="miba-form-group" style="grid-column:1/3">
+          <label class="miba-label">Nama Sekolah / Yayasan</label>
+          <input type="text" name="school" class="miba-input" value="{{ $settings[1]->setting_value??'' }}">
         </div>
-        <div class="col-md-6">
-          <div class="form-group">
-            <label>Kota / Kabupaten</label>
-            <input type="text" name="city" class="form-control" value="{{ $settings[5]->setting_value ?? '' }}">
-          </div>
-          <div class="form-group">
-            <label>Jenjang</label>
-            <input type="text" name="level" class="form-control" value="{{ $settings[7]->setting_value ?? '' }}" placeholder="Contoh: SMK">
-          </div>
-          <div class="form-group">
-            <label>Logo Sekolah</label>
-            @if(!empty($settings[6]->setting_value))
-              <div class="mb-2">
-                <img src="{{ asset('uploads/'.$settings[6]->setting_value) }}"
-                     style="height:60px;object-fit:contain;border:1px solid #ddd;padding:5px">
-              </div>
-            @endif
-            <input type="file" name="logo" class="form-control" accept="image/*">
-          </div>
+        <div class="miba-form-group" style="grid-column:1/3">
+          <label class="miba-label">Alamat</label>
+          <textarea name="address" class="miba-textarea" rows="2">{{ $settings[2]->setting_value??'' }}</textarea>
+        </div>
+        <div class="miba-form-group">
+          <label class="miba-label">No. Telepon</label>
+          <input type="text" name="phone" class="miba-input" value="{{ $settings[3]->setting_value??'' }}">
+        </div>
+        <div class="miba-form-group">
+          <label class="miba-label">Kecamatan / Distrik</label>
+          <input type="text" name="district" class="miba-input" value="{{ $settings[4]->setting_value??'' }}">
+        </div>
+        <div class="miba-form-group">
+          <label class="miba-label">Kota / Kabupaten</label>
+          <input type="text" name="city" class="miba-input" value="{{ $settings[5]->setting_value??'' }}">
+        </div>
+        <div class="miba-form-group">
+          <label class="miba-label">Level Aplikasi</label>
+          <select name="level" class="miba-select">
+            <option value="primary" {{ ($settings[7]->setting_value??'')=='primary'?'selected':'' }}>Primary (SD/MI)</option>
+            <option value="junior"  {{ ($settings[7]->setting_value??'')=='junior'?'selected':'' }}>Junior (SMP/MTs)</option>
+            <option value="senior"  {{ ($settings[7]->setting_value??'')=='senior'?'selected':'' }}>Senior (SMA/SMK/MA)</option>
+          </select>
+        </div>
+        <div class="miba-form-group" style="grid-column:1/3">
+          <label class="miba-label">Logo</label>
+          @if(($settings[6]->setting_value??'') && file_exists(public_path('uploads/school/'.($settings[6]->setting_value??''))))
+            <img src="{{ asset('uploads/school/'.$settings[6]->setting_value) }}" style="height:60px;border-radius:8px;margin-bottom:8px;display:block">
+          @endif
+          <input type="file" name="logo" class="miba-input" accept="image/*">
         </div>
       </div>
-      <div class="box-footer">
-        <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> Simpan Pengaturan</button>
-      </div>
+      <button class="btn-miba btn-primary-miba"><i class="fa fa-save"></i> Simpan Pengaturan</button>
     </form>
   </div>
 </div>

@@ -1,138 +1,107 @@
 @extends('layouts.app')
 @section('content')
-<div class="box box-primary">
-  <div class="box-header with-border"><h3 class="box-title">Laporan Total Keuangan</h3></div>
-  <div class="box-body">
-    <form method="GET" class="form-inline" style="margin-bottom:15px">
-      <label>Dari Tanggal</label>
-      <div class="input-group date" style="margin:0 8px">
-        <input type="text" name="ds" class="form-control" value="{{ request('ds') }}">
-        <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
-      </div>
-      <label>Sampai Tanggal</label>
-      <div class="input-group date" style="margin:0 8px">
-        <input type="text" name="de" class="form-control" value="{{ request('de') }}">
-        <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
-      </div>
-      <button class="btn btn-primary"><i class="fa fa-filter"></i> Filter</button>
-      <a href="{{ route('report.index') }}" class="btn btn-default">Reset</a>
-      <a href="{{ route('report.exportKeuangan', ['ds'=>request('ds'),'de'=>request('de')]) }}" class="btn btn-success">
-        <i class="fa fa-file-excel-o"></i> Export Laporan Keuangan (CSV)
-      </a>
-    </form>
 
-    <div class="row">
-      <div class="col-md-3">
-        <div class="info-box bg-green">
-          <span class="info-box-icon"><i class="fa fa-money"></i></span>
-          <div class="info-box-content">
-            <span class="info-box-text">Pembayaran Bulanan</span>
-            <span class="info-box-number">Rp {{ number_format($totalBulan,0,',','.') }}</span>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="info-box bg-aqua">
-          <span class="info-box-icon"><i class="fa fa-money"></i></span>
-          <div class="info-box-content">
-            <span class="info-box-text">Pembayaran Bebas</span>
-            <span class="info-box-number">Rp {{ number_format($totalBebas,0,',','.') }}</span>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="info-box bg-yellow">
-          <span class="info-box-icon"><i class="fa fa-arrow-down"></i></span>
-          <div class="info-box-content">
-            <span class="info-box-text">Pemasukan Lain (Debit)</span>
-            <span class="info-box-number">Rp {{ number_format($totalDebit,0,',','.') }}</span>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="info-box bg-red">
-          <span class="info-box-icon"><i class="fa fa-arrow-up"></i></span>
-          <div class="info-box-content">
-            <span class="info-box-text">Pengeluaran (Kredit)</span>
-            <span class="info-box-number">Rp {{ number_format($totalKredit,0,',','.') }}</span>
-          </div>
-        </div>
-      </div>
+{{-- Stat Cards --}}
+<div class="miba-stat-grid" style="margin-bottom:20px">
+  <div class="miba-stat">
+    <div class="miba-stat-icon blue"><i class="fa fa-arrow-down"></i></div>
+    <div class="miba-stat-body">
+      <div class="miba-stat-value" style="font-size:16px">Rp {{ number_format($totalBulan,0,',','.') }}</div>
+      <div class="miba-stat-label">Pemasukan SPP/Tagihan</div>
     </div>
-
-    <div class="row">
-      <div class="col-md-4">
-        <div class="small-box bg-green">
-          <div class="inner">
-            <h3>Rp {{ number_format($pemasukan,0,',','.') }}</h3>
-            <p>Total Pemasukan</p>
-          </div>
-          <div class="icon"><i class="fa fa-plus"></i></div>
-        </div>
+  </div>
+  <div class="miba-stat">
+    <div class="miba-stat-icon green"><i class="fa fa-plus-circle"></i></div>
+    <div class="miba-stat-body">
+      <div class="miba-stat-value" style="font-size:16px">Rp {{ number_format($totalDebit,0,',','.') }}</div>
+      <div class="miba-stat-label">Pemasukan Lain</div>
+    </div>
+  </div>
+  <div class="miba-stat">
+    <div class="miba-stat-icon red"><i class="fa fa-arrow-up"></i></div>
+    <div class="miba-stat-body">
+      <div class="miba-stat-value" style="font-size:16px">Rp {{ number_format($totalKredit,0,',','.') }}</div>
+      <div class="miba-stat-label">Total Pengeluaran</div>
+    </div>
+  </div>
+  <div class="miba-stat">
+    <div class="miba-stat-icon {{ $saldo >= 0 ? 'teal' : 'red' }}"><i class="fa fa-balance-scale"></i></div>
+    <div class="miba-stat-body">
+      <div class="miba-stat-value" style="font-size:16px;color:{{ $saldo >= 0 ? 'var(--primary)' : 'var(--danger)' }}">
+        Rp {{ number_format(abs($saldo),0,',','.') }}
       </div>
-      <div class="col-md-4">
-        <div class="small-box bg-red">
-          <div class="inner">
-            <h3>Rp {{ number_format($pengeluaran,0,',','.') }}</h3>
-            <p>Total Pengeluaran</p>
-          </div>
-          <div class="icon"><i class="fa fa-minus"></i></div>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <div class="small-box bg-blue">
-          <div class="inner">
-            <h3>Rp {{ number_format($saldo,0,',','.') }}</h3>
-            <p>Saldo</p>
-          </div>
-          <div class="icon"><i class="fa fa-balance-scale"></i></div>
-        </div>
-      </div>
+      <div class="miba-stat-label">{{ $saldo >= 0 ? 'Saldo Bersih' : 'Defisit' }}</div>
     </div>
   </div>
 </div>
 
-<div class="box box-default">
-  <div class="box-header with-border"><h3 class="box-title">Cetak Detail Pembayaran (PDF)</h3></div>
-  <div class="box-body">
-    <form method="GET" action="{{ route('report.cetak') }}" target="_blank">
-      <div class="row">
-        <div class="col-md-4">
-          <div class="form-group">
-            <label>Tahun Pelajaran</label>
-            <select name="period_id" class="form-control">
-              <option value="">Semua Tahun</option>
-              @foreach($periods as $p)
-                <option value="{{ $p->period_id }}" {{ isset($period) && $period->period_id==$p->period_id?'selected':'' }}>
-                  {{ $p->period_start }}/{{ $p->period_end }}
-                </option>
-              @endforeach
-            </select>
-          </div>
-        </div>
-        <div class="col-md-4">
-          <div class="form-group">
-            <label>Dari Tanggal</label>
-            <div class="input-group date">
-              <input type="text" name="date_start" class="form-control">
-              <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-4">
-          <div class="form-group">
-            <label>Sampai Tanggal</label>
-            <div class="input-group date">
-              <input type="text" name="date_end" class="form-control">
-              <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
-            </div>
-          </div>
-        </div>
+<div class="miba-card">
+  <div class="miba-card-header">
+    <div class="miba-card-title"><i class="fa fa-bar-chart"></i> Laporan Total Keuangan</div>
+    <a href="{{ route('report.exportKeuangan', request()->query()) }}" class="btn-miba btn-miba-sm btn-success-miba">
+      <i class="fa fa-file-excel-o"></i> Export Excel
+    </a>
+  </div>
+  <div class="miba-filter-bar">
+    <form method="GET" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <div class="miba-input-icon">
+        <i class="fa fa-calendar icon"></i>
+        <input type="text" name="ds" class="miba-input date-pick" value="{{ request('ds') }}" placeholder="Dari tanggal" style="width:160px">
       </div>
-      <button type="submit" class="btn btn-danger">
-        <i class="fa fa-file-pdf-o"></i> Cetak PDF
-      </button>
+      <span style="color:var(--text-muted);font-size:13px">s/d</span>
+      <div class="miba-input-icon">
+        <i class="fa fa-calendar icon"></i>
+        <input type="text" name="de" class="miba-input date-pick" value="{{ request('de') }}" placeholder="Sampai tanggal" style="width:160px">
+      </div>
+      <button class="btn-miba btn-miba-sm btn-primary-miba"><i class="fa fa-filter"></i> Filter</button>
+      <a href="{{ route('report.index') }}" class="btn-miba btn-miba-sm btn-ghost-miba">Reset</a>
     </form>
+  </div>
+  <div class="miba-card-body" style="border-bottom:1px solid var(--border)">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:8px">RINGKASAN KEUANGAN</div>
+        <table class="miba-table">
+          <tr><td style="font-weight:500">Total Pemasukan SPP</td><td style="text-align:right;font-weight:600;color:var(--success)">Rp {{ number_format($totalBulan,0,',','.') }}</td></tr>
+          <tr><td style="font-weight:500">Pemasukan Bebas/Lainnya</td><td style="text-align:right;font-weight:600;color:var(--success)">Rp {{ number_format($totalBebas,0,',','.') }}</td></tr>
+          <tr><td style="font-weight:500">Pemasukan Lain-lain</td><td style="text-align:right;font-weight:600;color:var(--success)">Rp {{ number_format($totalDebit,0,',','.') }}</td></tr>
+          <tr style="border-top:2px solid var(--border-dark)"><td style="font-weight:700">Total Pemasukan</td><td style="text-align:right;font-weight:700;color:var(--success)">Rp {{ number_format($pemasukan,0,',','.') }}</td></tr>
+          <tr><td style="font-weight:500">Total Pengeluaran</td><td style="text-align:right;font-weight:600;color:var(--danger)">Rp {{ number_format($totalKredit,0,',','.') }}</td></tr>
+          <tr style="border-top:2px solid var(--border-dark)">
+            <td style="font-weight:700">Saldo Bersih</td>
+            <td style="text-align:right;font-weight:800;font-size:15px;color:{{ $saldo>=0?'var(--primary)':'var(--danger)' }}">
+              Rp {{ number_format(abs($saldo),0,',','.') }}
+            </td>
+          </tr>
+        </table>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:8px">PERSENTASE</div>
+        @php $total = $pemasukan + $totalKredit; @endphp
+        @if($total > 0)
+        <div style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+            <span>Pemasukan</span>
+            <span style="font-weight:600;color:var(--success)">{{ round($pemasukan/$total*100) }}%</span>
+          </div>
+          <div style="height:8px;background:var(--border);border-radius:99px;overflow:hidden">
+            <div style="width:{{ round($pemasukan/$total*100) }}%;height:100%;background:var(--success);border-radius:99px"></div>
+          </div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+            <span>Pengeluaran</span>
+            <span style="font-weight:600;color:var(--danger)">{{ round($totalKredit/$total*100) }}%</span>
+          </div>
+          <div style="height:8px;background:var(--border);border-radius:99px;overflow:hidden">
+            <div style="width:{{ round($totalKredit/$total*100) }}%;height:100%;background:var(--danger);border-radius:99px"></div>
+          </div>
+        </div>
+        @else
+        <div style="color:var(--text-muted);font-size:13px">Belum ada data transaksi</div>
+        @endif
+      </div>
+    </div>
   </div>
 </div>
 @endsection
