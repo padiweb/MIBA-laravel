@@ -100,7 +100,7 @@ class PaymentController extends Controller {
         $payment = Payment::with(['pos','period'])->findOrFail($payment_id);
         $classes = StudentClass::orderBy('class_name')->get();
         $majorsList = Majors::orderBy('majors_name')->get();
-        $students = Student::active()->orderBy('student_full_name')->get();
+        $students = Student::active()->with(['class','majors'])->orderBy('student_full_name')->get();
         $months  = Month::orderBy('month_id')->get();
 
         return $this->render('payment.tarif_bulan_form', compact(
@@ -231,7 +231,7 @@ class PaymentController extends Controller {
         $payment = Payment::with(['pos','period'])->findOrFail($payment_id);
         $classes = StudentClass::orderBy('class_name')->get();
         $majorsList = Majors::orderBy('majors_name')->get();
-        $students = Student::active()->orderBy('student_full_name')->get();
+        $students = Student::active()->with(['class','majors'])->orderBy('student_full_name')->get();
 
         return $this->render('payment.tarif_bebas_form', compact(
             'payment','classes','majorsList','students','mode'
