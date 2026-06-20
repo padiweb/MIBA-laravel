@@ -172,6 +172,17 @@ class ReportController extends Controller {
 
             $students = $studentQuery->orderBy('class_class_id')->orderBy('student_full_name')->get();
 
+            // Daftar SEMUA jenis pembayaran Bebas yang aktif di tahun pelajaran ini (jadi kolom tabel)
+            // Hanya tampilkan jenis pembayaran Bebas yang BENAR-BENAR sudah diatur
+            // tarifnya (punya minimal 1 baris di tabel `bebas`) — payment yang baru
+            // dibuat di menu Pengaturan tapi belum diisi tarif tidak akan muncul
+            // sebagai kolom kosong di laporan ini.
+            $bebasPayments = \App\Models\Payment::with('pos')
+                ->where('period_period_id', $request->p)
+                ->where('payment_type', 'BEBAS')
+                ->whereHas('bebas')
+                ->get();
+
             $rows = [];
             $grandDibayar = 0;
             $grandKekurangan = 0;
@@ -183,7 +194,7 @@ class ReportController extends Controller {
                         ->where('payment_type', 'BULAN'))
                     ->get();
 
-                $bebas = Bebas::with('payment.pos')
+                $bebasData = Bebas::with('payment.pos')
                     ->where('student_student_id', $student->student_id)
                     ->whereHas('payment', fn($q) => $q->where('period_period_id', $request->p)
                         ->where('payment_type', 'BEBAS'))
@@ -203,11 +214,17 @@ class ReportController extends Controller {
                     }
                 }
 
-                $bebasTotal = 0;
-                foreach ($bebas as $bb) {
-                    $totalTagihan += $bb->bebas_bill;
-                    $totalDibayar += $bb->bebas_total_pay;
-                    $bebasTotal += $bb->bebas_total_pay;
+                // Sel per kolom jenis pembayaran Bebas
+                $bebasCells = [];
+                foreach ($bebasPayments as $bp) {
+                    $bb = $bebasData->firstWhere('payment_payment_id', $bp->payment_id);
+                    if ($bb) {
+                        $totalTagihan += $bb->bebas_bill;
+                        $totalDibayar += $bb->bebas_total_pay;
+                        $bebasCells[$bp->payment_id] = $bb;
+                    } else {
+                        $bebasCells[$bp->payment_id] = null;
+                    }
                 }
 
                 $kekurangan = $totalTagihan - $totalDibayar;
@@ -217,15 +234,16 @@ class ReportController extends Controller {
                 $rows[] = [
                     'student' => $student,
                     'months'  => $monthCells,
-                    'bebas'   => $bebasTotal,
+                    'bebasCells' => $bebasCells,
                     'total_dibayar' => $totalDibayar,
                     'kekurangan'    => $kekurangan,
                 ];
             }
 
             $result = [
-                'months' => $sortedMonths,
-                'rows'   => $rows,
+                'months'  => $sortedMonths,
+                'bebasPayments' => $bebasPayments,
+                'rows'    => $rows,
                 'grand_dibayar' => $grandDibayar,
                 'grand_kekurangan' => $grandKekurangan,
             ];
@@ -251,9 +269,16 @@ class ReportController extends Controller {
         elseif ($request->filled('k')) $studentQuery->where('majors_majors_id', $request->k);
         $students = $studentQuery->orderBy('class_class_id')->orderBy('student_full_name')->get();
 
+        $bebasPayments = \App\Models\Payment::with('pos')
+            ->where('period_period_id', $request->p)
+            ->where('payment_type', 'BEBAS')
+            ->whereHas('bebas')
+            ->get();
+
         // Build header & data
         $hdr = ['No', 'Kelas', 'NIS', 'Nama'];
         foreach ($sortedMonths as $m) $hdr[] = $m->month_name;
+        foreach ($bebasPayments as $bp) $hdr[] = $bp->pos->pos_name ?? 'Bebas';
         $hdr[] = 'Total Dibayar';
         $hdr[] = 'Kekurangan';
 
@@ -262,6 +287,10 @@ class ReportController extends Controller {
         foreach ($students as $student) {
             $bulans = Bulan::where('student_student_id', $student->student_id)
                 ->whereHas('payment', fn($q) => $q->where('period_period_id', $request->p)->where('payment_type','BULAN'))
+                ->get();
+
+            $bebasData = Bebas::where('student_student_id', $student->student_id)
+                ->whereHas('payment', fn($q) => $q->where('period_period_id', $request->p)->where('payment_type','BEBAS'))
                 ->get();
 
             $row = [$no++, $student->class->class_name ?? '-', $student->student_nis, $student->student_full_name];
@@ -276,6 +305,17 @@ class ReportController extends Controller {
                     $row[] = '';
                 }
             }
+            foreach ($bebasPayments as $bp) {
+                $bb = $bebasData->firstWhere('payment_payment_id', $bp->payment_id);
+                if ($bb) {
+                    $totalTagihan += $bb->bebas_bill;
+                    $totalDibayar += $bb->bebas_total_pay;
+                    $sisa = $bb->bebas_bill - $bb->bebas_total_pay;
+                    $row[] = $sisa <= 0 ? 'LUNAS' : $sisa;
+                } else {
+                    $row[] = '';
+                }
+            }
             $row[] = $totalDibayar;
             $row[] = $totalTagihan - $totalDibayar;
             $data[] = $row;
@@ -285,7 +325,7 @@ class ReportController extends Controller {
         $sheetName = 'Lap Per-Kelas ' . ($period ? $period->period_start.'/'.$period->period_end : '');
 
         return (new \App\Helpers\ExcelExport('Laporan Per-Kelas'))
-            ->addSheet($sheetName, $hdr, $data)
+            ->addSheet($sheetName, $hdr, $data, ['C' => 'text'])
             ->download('Laporan_Per_Kelas_' . date('Y-m-d') . '.xls');
     }
 
@@ -353,7 +393,7 @@ class ReportController extends Controller {
         $sheetName = 'Rekapitulasi ' . ($period ? $period->period_start.'/'.$period->period_end : 'Semua');
 
         return (new \App\Helpers\ExcelExport('Rekapitulasi Pembayaran'))
-            ->addSheet($sheetName, $headers, $data, ['F'=>'number','G'=>'number','H'=>'number'])
+            ->addSheet($sheetName, $headers, $data, ['B'=>'text','F'=>'number','G'=>'number','H'=>'number'])
             ->download('Rekapitulasi_Pembayaran_' . date('Y-m-d') . '.xls');
     }
 

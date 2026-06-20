@@ -22,4 +22,8 @@ class Payment extends Model {
     public function bulans() {
         return $this->hasMany(Bulan::class, 'payment_payment_id', 'payment_id');
     }
+
+    public function bebas() {
+        return $this->hasMany(Bebas::class, 'payment_payment_id', 'payment_id');
+    }
 }
