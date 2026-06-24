@@ -1,61 +1,125 @@
 @extends('portal.layout')
 @section('content')
-<div class="miba-card">
-  <div class="miba-card-header">
-    <div class="miba-card-title"><i class="fa fa-money"></i> Cek Pembayaran</div>
-    <form method="GET" style="display:flex;gap:8px">
-      <select name="n" class="miba-select" style="width:170px" onchange="this.form.submit()">
+
+{{-- Period Selector --}}
+<div class="p-card">
+  <div class="p-card-body">
+    <div class="p-period-label">Tahun Pelajaran</div>
+    <form method="GET" id="periodForm">
+      <select name="n" class="p-select" onchange="document.getElementById('periodForm').submit()">
         @foreach($periods as $p)
-          <option value="{{ $p->period_id }}" {{ $periodId==$p->period_id?'selected':'' }}>{{ $p->period_start }}/{{ $p->period_end }}</option>
+          <option value="{{ $p->period_id }}" {{ $periodId==$p->period_id ? 'selected' : '' }}>
+            {{ $p->period_start }}/{{ $p->period_end }}
+          </option>
         @endforeach
       </select>
     </form>
   </div>
-  <div class="miba-card-body p0">
-    <div class="miba-tabs" style="padding:0 16px;border-bottom:2px solid var(--border)">
-      <a class="miba-tab active" href="#" onclick="switchTab(this,'tab-bulanan')">Bulanan</a>
-      <a class="miba-tab" href="#" onclick="switchTab(this,'tab-bebas')">Bebas / Lainnya</a>
+</div>
+
+{{-- Tabs --}}
+<div class="p-tabs">
+  <button class="p-tab-btn active" onclick="switchTab(this,'tab-bulanan')">
+    <i class="fa fa-calendar"></i> Bulanan
+  </button>
+  <button class="p-tab-btn" onclick="switchTab(this,'tab-bebas')">
+    <i class="fa fa-list"></i> Lain-lain
+  </button>
+</div>
+
+{{-- Tab: Bulanan --}}
+<div id="tab-bulanan" class="p-tab-pane active">
+  @php
+    $months = $bulans->groupBy(fn($b) => $b->payment->pos->pos_name ?? 'SPP');
+  @endphp
+  @if($months->count())
+    @foreach($months as $payName => $rows)
+    <div class="p-card">
+      <div class="p-card-header">
+        <div class="p-card-title"><i class="fa fa-dollar"></i> {{ $payName }}</div>
+        @php
+          $paid = $rows->where('bulan_status', 1)->count();
+          $total = $rows->count();
+        @endphp
+        <span class="p-badge {{ $paid==$total ? 'p-badge-success' : 'p-badge-warning' }}">
+          {{ $paid }}/{{ $total }} Lunas
+        </span>
+      </div>
+      <div class="p-card-body p0">
+        <div class="p-month-grid" style="padding:var(--p-space-3)">
+          @foreach($rows->sortBy('month_month_id') as $b)
+          <div class="p-month-cell {{ $b->bulan_status ? 'paid' : 'unpaid' }}">
+            <div class="p-month-cell-name">{{ $b->month->month_name ?? '' }}</div>
+            <div class="p-month-cell-status">
+              @if($b->bulan_status)
+                ✓ Lunas
+              @else
+                {{ number_format($b->bulan_bill, 0, ',', '.') }}
+              @endif
+            </div>
+          </div>
+          @endforeach
+        </div>
+      </div>
     </div>
-    <div id="tab-bulanan" class="miba-tab-content active" style="padding:0">
-      <table class="miba-table">
-        <thead><tr><th>Pembayaran</th><th>Bulan</th><th>Tagihan</th><th>Status</th><th>Tgl Bayar</th></tr></thead>
-        <tbody>
-          @forelse($bulans as $row)
-          <tr>
-            <td style="font-weight:500">{{ $row->payment->pos->pos_name??'-' }}</td>
-            <td>{{ $row->month->month_name??'' }}</td>
-            <td>Rp {{ number_format($row->bulan_bill,0,',','.') }}</td>
-            <td><span class="badge-miba {{ $row->bulan_status?'badge-success':'badge-danger' }}">{{ $row->bulan_status?'Lunas':'Belum' }}</span></td>
-            <td style="font-size:12px;color:var(--text-muted)">{{ $row->bulan_status&&$row->bulan_date_pay?\Carbon\Carbon::parse($row->bulan_date_pay)->format('d/m/Y'):'-' }}</td>
-          </tr>
-          @empty
-          <tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted)">Tidak ada data</td></tr>
-          @endforelse
-        </tbody>
-      </table>
+    @endforeach
+  @else
+    <div class="p-card">
+      <div class="p-card-body" style="text-align:center;padding:var(--p-space-8)">
+        <div style="font-size:36px;margin-bottom:8px">📅</div>
+        <div style="font-weight:600;color:var(--p-text-muted)">Tidak ada data tagihan bulanan</div>
+      </div>
     </div>
-    <div id="tab-bebas" class="miba-tab-content" style="padding:0">
-      <table class="miba-table">
-        <thead><tr><th>Jenis Pembayaran</th><th>Total</th><th>Dibayar</th><th>Sisa</th><th>Status</th></tr></thead>
-        <tbody>
-          @forelse($bebasList as $row)
-          @php $sisa=$row->bebas_bill-$row->bebas_total_pay; $lunas=$sisa<=0; @endphp
-          <tr>
-            <td style="font-weight:500">{{ $row->payment->pos->pos_name??'-' }} <small style="color:var(--text-muted)">T.A {{ $row->payment->period->period_start??'' }}/{{ $row->payment->period->period_end??'' }}</small></td>
-            <td>Rp {{ number_format($row->bebas_bill,0,',','.') }}</td>
-            <td style="color:var(--success)">Rp {{ number_format($row->bebas_total_pay,0,',','.') }}</td>
-            <td style="color:{{ $lunas?'var(--success)':'var(--danger)' }};font-weight:600">Rp {{ number_format($sisa,0,',','.') }}</td>
-            <td><span class="badge-miba {{ $lunas?'badge-success':'badge-danger' }}">{{ $lunas?'Lunas':'Belum' }}</span></td>
-          </tr>
-          @empty
-          <tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted)">Tidak ada data</td></tr>
-          @endforelse
-        </tbody>
-      </table>
+  @endif
+</div>
+
+{{-- Tab: Bebas/Lainnya --}}
+<div id="tab-bebas" class="p-tab-pane">
+  @if($bebasList->count())
+  <div class="p-card">
+    <div class="p-card-body p0">
+      @foreach($bebasList as $row)
+      @php
+        $sisa  = $row->bebas_bill - $row->bebas_total_pay;
+        $lunas = $sisa <= 0;
+        $pct   = $row->bebas_bill > 0 ? min(100, round($row->bebas_total_pay / $row->bebas_bill * 100)) : 0;
+      @endphp
+      <div class="p-bebas-item">
+        <div class="p-bebas-row">
+          <div class="p-bebas-name">{{ $row->payment->pos->pos_name ?? '-' }}</div>
+          <span class="p-badge {{ $lunas ? 'p-badge-success' : 'p-badge-warning' }}">
+            {{ $lunas ? 'Lunas' : number_format($sisa,0,',','.') }}
+          </span>
+        </div>
+        <div class="p-progress">
+          <div class="p-progress-bar {{ $lunas ? 'full' : '' }}" style="width:{{ $pct }}%"></div>
+        </div>
+        <div class="p-bebas-nums">
+          <span>Dibayar: Rp {{ number_format($row->bebas_total_pay,0,',','.') }}</span>
+          <span>Total: Rp {{ number_format($row->bebas_bill,0,',','.') }}</span>
+        </div>
+      </div>
+      @endforeach
     </div>
   </div>
+  @else
+    <div class="p-card">
+      <div class="p-card-body" style="text-align:center;padding:var(--p-space-8)">
+        <div style="font-size:36px;margin-bottom:8px">✅</div>
+        <div style="font-weight:600;color:var(--p-text-muted)">Tidak ada tagihan lainnya</div>
+      </div>
+    </div>
+  @endif
 </div>
+
 @endsection
 @push('scripts')
-<script>function switchTab(el,id){$('.miba-tab').removeClass('active');$('.miba-tab-content').removeClass('active');$(el).addClass('active');$('#'+id).addClass('active');return false;}</script>
+<script>
+function switchTab(btn, id) {
+  document.querySelectorAll('.p-tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.p-tab-pane').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(id).classList.add('active');
+}
+</script>
 @endpush

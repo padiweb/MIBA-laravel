@@ -1,39 +1,139 @@
 @extends('portal.layout')
 @section('content')
-<div style="display:grid;grid-template-columns:260px 1fr;gap:16px;align-items:start">
-  <div class="miba-card">
-    <div class="miba-card-body" style="text-align:center">
-      @if($student->student_img)
-        <img src="{{ asset('uploads/student/'.$student->student_img) }}" style="width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid var(--border)">
-      @else
-        <div style="width:90px;height:90px;border-radius:50%;background:var(--primary-xlight);display:flex;align-items:center;justify-content:center;margin:0 auto;color:var(--primary);font-size:32px"><i class="fa fa-user"></i></div>
-      @endif
-      <h3 style="font-size:15px;font-weight:700;margin:12px 0 4px">{{ $student->student_full_name }}</h3>
-      <p style="font-size:12px;color:var(--text-muted)">{{ $student->student_nis }}</p>
-      <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
-        <a href="{{ route('portal.profile.edit') }}" class="btn-miba btn-primary-miba" style="justify-content:center"><i class="fa fa-edit"></i> Edit Profil</a>
-        <a href="{{ route('portal.profile.cpw') }}" class="btn-miba btn-outline-miba" style="justify-content:center"><i class="fa fa-key"></i> Ganti Password</a>
+
+{{-- ── Profile Hero ── --}}
+<div class="p-profile-hero">
+  <div class="p-profile-avatar-wrap">
+    @if($student->student_img)
+      <img class="p-profile-avatar" src="{{ asset('uploads/student/'.$student->student_img) }}" alt="Foto">
+    @else
+      <div class="p-profile-avatar-placeholder">
+        {{ strtoupper(substr($student->student_full_name, 0, 1)) }}
       </div>
-    </div>
+    @endif
   </div>
-  <div class="miba-card">
-    <div class="miba-card-header"><div class="miba-card-title"><i class="fa fa-user"></i> Data Diri</div></div>
-    <div class="miba-card-body">
-      <table class="miba-table">
-        <tr><td style="width:180px;font-weight:500;color:var(--text-muted)">NIS</td><td style="font-weight:700">{{ $student->student_nis }}</td></tr>
-        <tr><td>NISN</td><td>{{ $student->student_nisn ?: '-' }}</td></tr>
-        <tr><td>Nama Lengkap</td><td>{{ $student->student_full_name }}</td></tr>
-        <tr><td>Jenis Kelamin</td><td>{{ $student->student_gender=='L'?'Laki-laki':'Perempuan' }}</td></tr>
-        <tr><td>Tempat, Tgl Lahir</td><td>{{ $student->student_born_place }}, {{ $student->student_born_date?\Carbon\Carbon::parse($student->student_born_date)->locale('id')->isoFormat('D MMMM Y'):'-' }}</td></tr>
-        <tr><td>No. HP</td><td>{{ $student->student_phone ?: '-' }}</td></tr>
-        <tr><td>Kelas</td><td>{{ $student->class->class_name??'-' }}</td></tr>
-        @if(($app_level??'')=='senior')<tr><td>Unit Sekolah</td><td>{{ $student->majors->majors_name??'-' }}</td></tr>@endif
-        <tr><td>Nama Ibu</td><td>{{ $student->student_name_of_mother ?: '-' }}</td></tr>
-        <tr><td>Nama Ayah</td><td>{{ $student->student_name_of_father ?: '-' }}</td></tr>
-        <tr><td>No. HP Orang Tua</td><td>{{ $student->student_parent_phone ?: '-' }}</td></tr>
-        <tr><td>Alamat</td><td>{{ $student->student_address ?: '-' }}</td></tr>
-      </table>
-    </div>
+  <div class="p-profile-name">{{ $student->student_full_name }}</div>
+  <div class="p-profile-nis">NIS {{ $student->student_nis }}</div>
+  <div class="p-profile-actions">
+    <a href="{{ route('portal.profile.edit') }}" class="p-btn p-btn-outline" style="border-color:rgba(255,255,255,.5);color:white">
+      <i class="fa fa-edit"></i> Edit Profil
+    </a>
+    <a href="{{ route('portal.profile.cpw') }}" class="p-btn p-btn-secondary" style="background:rgba(255,255,255,.15);color:white;border-color:rgba(255,255,255,.2)">
+      <i class="fa fa-lock"></i> Password
+    </a>
   </div>
 </div>
+
+{{-- ── Data Akademik ── --}}
+<div class="p-card">
+  <div class="p-card-header">
+    <div class="p-card-title"><i class="fa fa-graduation-cap"></i> Data Akademik</div>
+  </div>
+  <div class="p-card-body p0">
+    @php
+      $akademik = [
+        ['fa-id-card',     'NIS',             $student->student_nis],
+        ['fa-hashtag',     'NISN',            $student->student_nisn ?: '-'],
+        ['fa-th-list',     'Kelas',           $student->class->class_name ?? '-'],
+        ['fa-university',  'Unit Pendidikan', $student->majors->majors_name ?? '-'],
+      ];
+    @endphp
+    @foreach($akademik as [$icon, $label, $val])
+    <div class="p-info-row">
+      <div class="p-info-row-icon"><i class="fa {{ $icon }}"></i></div>
+      <div class="p-info-row-content">
+        <div class="p-info-row-label">{{ $label }}</div>
+        <div class="p-info-row-value">{{ $val }}</div>
+      </div>
+    </div>
+    @endforeach
+  </div>
+</div>
+
+{{-- ── Data Pribadi ── --}}
+<div class="p-card">
+  <div class="p-card-header">
+    <div class="p-card-title"><i class="fa fa-user"></i> Data Pribadi</div>
+  </div>
+  <div class="p-card-body p0">
+    @php
+      $born = $student->student_born_date
+        ? \Carbon\Carbon::parse($student->student_born_date)->locale('id')->isoFormat('D MMMM Y')
+        : '-';
+      $pribadi = [
+        ['fa-venus-mars',  'Jenis Kelamin',    $student->student_gender == 'L' ? 'Laki-laki' : 'Perempuan'],
+        ['fa-map-marker',  'Tempat Lahir',     $student->student_born_place ?: '-'],
+        ['fa-calendar',    'Tanggal Lahir',    $born],
+        ['fa-id-badge',    'NIK',              $student->student_hobby ?: '-'],
+        ['fa-phone',       'No. HP',           $student->student_phone ?: '-'],
+        ['fa-home',        'Alamat',           $student->student_address ?: '-'],
+      ];
+    @endphp
+    @foreach($pribadi as [$icon, $label, $val])
+    <div class="p-info-row">
+      <div class="p-info-row-icon"><i class="fa {{ $icon }}"></i></div>
+      <div class="p-info-row-content">
+        <div class="p-info-row-label">{{ $label }}</div>
+        <div class="p-info-row-value">{{ $val }}</div>
+      </div>
+    </div>
+    @endforeach
+  </div>
+</div>
+
+{{-- ── Data Keluarga ── --}}
+<div class="p-card">
+  <div class="p-card-header">
+    <div class="p-card-title"><i class="fa fa-users"></i> Data Keluarga</div>
+  </div>
+  <div class="p-card-body p0">
+    @php
+      $keluarga = [
+        ['fa-female', 'Nama Ibu',          $student->student_name_of_mother ?: '-'],
+        ['fa-male',   'Nama Ayah',         $student->student_name_of_father ?: '-'],
+        ['fa-phone',  'No. HP Orang Tua',  $student->student_parent_phone ?: '-'],
+      ];
+    @endphp
+    @foreach($keluarga as [$icon, $label, $val])
+    <div class="p-info-row">
+      <div class="p-info-row-icon"><i class="fa {{ $icon }}"></i></div>
+      <div class="p-info-row-content">
+        <div class="p-info-row-label">{{ $label }}</div>
+        <div class="p-info-row-value">{{ $val }}</div>
+      </div>
+    </div>
+    @endforeach
+  </div>
+</div>
+
+{{-- ── Menu Pengaturan ── --}}
+<div class="p-card">
+  <div class="p-nav-section">
+    <a href="{{ route('portal.profile.edit') }}" class="p-nav-row">
+      <div class="p-nav-row-icon" style="background:#dbeafe;color:#2563eb"><i class="fa fa-edit"></i></div>
+      <div class="p-nav-row-text">
+        <div class="p-nav-row-title">Edit Profil</div>
+        <div class="p-nav-row-desc">Ubah data pribadi dan keluarga</div>
+      </div>
+      <i class="fa fa-chevron-right p-nav-row-arrow"></i>
+    </a>
+    <a href="{{ route('portal.profile.cpw') }}" class="p-nav-row">
+      <div class="p-nav-row-icon" style="background:#f3e8ff;color:#9333ea"><i class="fa fa-lock"></i></div>
+      <div class="p-nav-row-text">
+        <div class="p-nav-row-title">Ganti Password</div>
+        <div class="p-nav-row-desc">Ubah kata sandi akun Anda</div>
+      </div>
+      <i class="fa fa-chevron-right p-nav-row-arrow"></i>
+    </a>
+    <a href="{{ route('portal.logout') }}" class="p-nav-row" onclick="return confirm('Yakin ingin keluar?')">
+      <div class="p-nav-row-icon" style="background:#fee2e2;color:#dc2626"><i class="fa fa-sign-out"></i></div>
+      <div class="p-nav-row-text">
+        <div class="p-nav-row-title" style="color:#dc2626">Keluar</div>
+        <div class="p-nav-row-desc">Logout dari akun ini</div>
+      </div>
+      <i class="fa fa-chevron-right p-nav-row-arrow"></i>
+    </a>
+  </div>
+</div>
+
 @endsection
