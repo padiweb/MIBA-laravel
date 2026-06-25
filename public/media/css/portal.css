@@ -184,8 +184,11 @@
   margin: 0 auto;
 }
 
-/* ── Bottom Navigation ── */
-.p-bottomnav {
+/* ── Desktop-only elements: hidden di mobile ── */
+.p-sidebar        { display: none; }
+.p-desktop-body   { display: block; flex: 1; }
+.p-topbar-school  { display: none; }
+.p-main           { display: block; min-width: 0; }
   position: fixed;
   bottom: 0;
   left: 0;
@@ -818,13 +821,173 @@
 }
 
 /* ============================================================
-   DESKTOP / TABLET OVERRIDES
-   Portal tampil sebagai panel tengah max-width 480px
+   DESKTOP / TABLET OVERRIDES (≥769px)
+   Layout: sidebar kiri + header atas + konten kanan
+   Mirip dashboard admin, bukan "hp di tengah layar"
    ============================================================ */
 @media (min-width: 769px) {
-  .p-shell { display: flex; justify-content: center; }
-  .p-topbar { max-width: 480px; margin: 0 auto; border-radius: 0 0 var(--p-radius) var(--p-radius); top: 0; position: sticky; width: 100%; }
-  .p-content { padding-bottom: var(--p-space-8); }
-  .p-bottomnav { max-width: 480px; left: 50%; transform: translateX(-50%); border-radius: var(--p-radius-lg) var(--p-radius-lg) 0 0; bottom: var(--p-space-4); box-shadow: var(--p-shadow-lg); }
-  .p-bottomnav { width: 480px; left: 50%; transform: translateX(-50%); }
+
+  body { background: var(--p-bg); overflow-x: hidden; }
+
+  .p-shell {
+    display: block;
+    min-height: 100vh;
+  }
+
+  /* ── App frame: full screen, flex row ── */
+  .p-app-frame {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  /* ── Topbar: header horizontal ── */
+  .p-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    width: 100%;
+    height: 60px;
+    padding: 0 32px;
+    background: var(--p-brand);
+    display: flex;
+    align-items: center;
+    box-shadow: 0 2px 16px rgba(37,99,235,.25);
+    border-radius: 0;
+  }
+  .p-topbar-title {
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .p-topbar-avatar {
+    width: 38px;
+    height: 38px;
+    font-size: 15px;
+  }
+
+  /* ── Body: sidebar + main ── */
+  .p-desktop-body {
+    display: flex;
+    flex: 1;
+  }
+
+  /* ── Topbar school name ── */
+  .p-topbar-school {
+    display: block;
+    font-size: 13px;
+    color: rgba(255,255,255,.7);
+    font-weight: 500;
+    margin-right: 16px;
+  }
+
+  /* ── Desktop body: flex row ── */
+  .p-desktop-body {
+    display: flex;
+    flex: 1;
+    min-height: calc(100vh - 60px);
+  }
+
+  /* ── Sidebar desktop ── */
+  .p-sidebar {
+    width: 240px;
+    flex-shrink: 0;
+    background: #1e3a8a;
+    height: calc(100vh - 60px);
+    position: sticky;
+    top: 60px;
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+    box-shadow: 2px 0 12px rgba(0,0,0,.1);
+    overflow-y: auto;
+  }
+  .p-sidebar-section {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.4);
+    padding: 16px 20px 6px;
+  }
+  .p-sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 20px;
+    color: rgba(255,255,255,.7);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background .15s, color .15s;
+    position: relative;
+    border: none;
+    background: none;
+    width: 100%;
+    cursor: pointer;
+    font-family: var(--p-font);
+    text-align: left;
+  }
+  .p-sidebar-item i {
+    width: 18px;
+    font-size: 15px;
+    opacity: .8;
+    flex-shrink: 0;
+  }
+  .p-sidebar-item:hover {
+    background: rgba(255,255,255,.1);
+    color: #fff;
+    text-decoration: none;
+  }
+  .p-sidebar-item.active {
+    background: rgba(255,255,255,.15);
+    color: #fff;
+  }
+  .p-sidebar-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 6px; bottom: 6px;
+    width: 3px;
+    background: #60a5fa;
+    border-radius: 0 3px 3px 0;
+  }
+  .p-sidebar-item.active i { opacity: 1; }
+  .p-sidebar-item.danger { color: rgba(252,165,165,.8); }
+  .p-sidebar-item.danger:hover { background: rgba(220,38,38,.15); color: #fca5a5; }
+
+  /* ── Main content area ── */
+  .p-main {
+    flex: 1;
+    min-width: 0;
+    overflow-y: auto;
+    background: var(--p-bg);
+  }
+
+  .p-content {
+    max-width: 800px;
+    padding: 28px 32px 40px;
+    margin: 0 auto;
+  }
+
+  /* ── Bottom nav: tersembunyi di desktop ── */
+  .p-bottomnav { display: none; }
+
+  /* ── Card grid 2 kolom di desktop ── */
+  .p-desktop-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+  .p-desktop-grid .p-card { margin-bottom: 0; }
+
+  /* Hero di desktop lebih compact */
+  .p-hero { border-radius: 16px; }
+
+  /* Actions grid 4 kolom tetap */
+  .p-actions { grid-template-columns: repeat(4, 1fr); }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .p-sidebar { width: 200px; }
+  .p-content { padding: 20px 24px; }
 }
